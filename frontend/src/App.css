@@ -45,6 +45,18 @@
   font-weight: 600;
 }
 
+/* US-03: the author links to its profile */
+.video-author a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.video-author a:hover,
+.video-author a:focus-visible {
+  color: var(--pt-primary);
+  text-decoration: underline;
+}
+
 .video-facts {
   color: var(--pt-text-secondary);
   font-size: 0.875rem;
@@ -76,6 +88,18 @@
   width: 36px;
   height: 36px;
   font-size: 0.9rem;
+}
+
+/* US-03: profile header */
+.avatar-lg {
+  width: 112px;
+  height: 112px;
+  font-size: 2.75rem;
+}
+
+.avatar-image {
+  object-fit: cover;
+  background: var(--pt-surface);
 }
 
 /* Description card */

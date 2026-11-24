@@ -142,7 +142,12 @@ const VideoDetail = ({ id }: { id: number }) => {
         <div className="video-meta">
           {video.author && <Avatar name={video.author} />}
           <div className="min-w-0">
-            {video.author && <p className="video-author mb-0">{video.author}</p>}
+            {video.author && (
+              <p className="video-author mb-0">
+                {/* US-03: the author's profile, with the other videos of the channel */}
+                <Link to={`/profile/${encodeURIComponent(video.author)}`}>{video.author}</Link>
+              </p>
+            )}
             <p className="video-facts mb-0">
               <time dateTime={video.publishedAt} title={dateTimeText}>
                 {dateText}

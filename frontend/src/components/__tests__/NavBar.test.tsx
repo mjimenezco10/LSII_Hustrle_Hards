@@ -17,6 +17,7 @@ const renderNavBar = (user: AuthContextValue['user'], showLogin?: boolean) => {
   const onSettings = jest.fn();
   const onUpload = jest.fn();
   const onFavourites = jest.fn();
+  const onProfile = jest.fn();
   render(
     <ThemeProvider>
       <AuthContext.Provider value={auth}>
@@ -26,12 +27,13 @@ const renderNavBar = (user: AuthContextValue['user'], showLogin?: boolean) => {
           onSettings={onSettings}
           onUpload={onUpload}
           onFavourites={onFavourites}
+          onProfile={onProfile}
           showLogin={showLogin}
         />
       </AuthContext.Provider>
     </ThemeProvider>
   );
-  return { auth, onHome, onLogin, onSettings, onUpload, onFavourites };
+  return { auth, onHome, onLogin, onSettings, onUpload, onFavourites, onProfile };
 };
 
 describe('NavBar', () => {
@@ -132,6 +134,16 @@ describe('NavBar', () => {
     renderNavBar(null);
 
     expect(screen.queryByRole('button', { name: 'Analytics' })).not.toBeInTheDocument();
+  });
+
+  it('opens the own profile from the user menu (US-03)', () => {
+    const { onProfile } = renderNavBar({ id: 1, username: 'alice', email: 'alice@mail.com' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'User menu for alice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Your profile' }));
+
+    expect(onProfile).toHaveBeenCalledWith('alice');
+    expect(screen.queryByRole('button', { name: 'Your profile' })).not.toBeInTheDocument();
   });
 
   it('opens the favourites from the user menu', () => {

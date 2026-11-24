@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { changeEmail, changePassword, changeUsername, deleteAccount } from '../account/accountApi';
 import { toApiError, type AuthResponse, type User } from '../auth/authApi';
 import { useAuth } from '../auth/authContext';
+import { useTranslation } from '../i18n/i18nContext';
 
 type Field = { name: string; label: string; type: 'text' | 'email' | 'password'; autoComplete: string };
 
@@ -209,11 +210,23 @@ const DeleteAccountRow = ({ user, hasPassword }: { user: User; hasPassword: bool
  * Google" can change them too; they set their first password without a current one.
  */
 const AccountSettings = ({ user }: { user: User }) => {
+  const { t } = useTranslation();
   // Sessions saved before the field existed have no value: ask for the current password to be safe
   const hasPassword = user.hasPassword !== false;
 
   return (
     <>
+      {/* US-03: avatar, description, location and website are edited on the profile page itself */}
+      <div className="settings-row">
+        <div className="settings-row-text">
+          <span>
+            {t('profile.avatarLabel')}, {t('profile.descriptionLabel').toLowerCase()}…
+          </span>
+        </div>
+        <Link to={`/profile/${encodeURIComponent(user.username)}`} className="btn btn-outline-secondary btn-sm">
+          {t('settings.editProfile')}
+        </Link>
+      </div>
       <AccountRow
         id="account-username"
         label="Username"

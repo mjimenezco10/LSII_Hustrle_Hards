@@ -5,6 +5,7 @@ import { comments } from './comments';
 import { common } from './common';
 import { library } from './library';
 import { nav } from './nav';
+import { profile } from './profile';
 import { settings } from './settings';
 import { upload } from './upload';
 import { video } from './video';
@@ -22,6 +23,7 @@ export const MESSAGES = {
   common,
   library,
   nav,
+  profile,
   settings,
   upload,
   video,

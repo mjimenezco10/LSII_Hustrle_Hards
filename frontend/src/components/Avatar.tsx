@@ -1,16 +1,25 @@
 import type { CSSProperties } from 'react';
 import { avatarHue } from '../utils/avatarHue';
+import { toMediaUrl } from '../videos/videosApi';
 
 type Props = {
   name: string;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
+  // US-03: path under /media of the avatar the user uploaded; without it the initial is shown
+  avatarUrl?: string | null;
+  // Text alternative for the image; empty (decorative) when the name is already shown next to it
+  alt?: string;
 };
 
 /**
- * Round badge with the first letter of a user or channel name, coloured from the name. Decorative: the name is
- * always shown next to it.
+ * Round avatar of a user or channel: the uploaded picture, or the first letter of the name coloured from the name.
+ * Decorative by default: the name is always shown next to it.
  */
-const Avatar = ({ name, size = 'md' }: Props) => {
+const Avatar = ({ name, size = 'md', avatarUrl, alt = '' }: Props) => {
+  if (avatarUrl) {
+    return <img src={toMediaUrl(avatarUrl)} alt={alt} className={`avatar avatar-${size} avatar-image`} />;
+  }
+
   const initial = Array.from(name.trim())[0]?.toUpperCase() ?? '?';
   const style = { '--avatar-hue': avatarHue(name) } as CSSProperties;
 

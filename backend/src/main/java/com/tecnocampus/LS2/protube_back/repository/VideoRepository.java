@@ -76,6 +76,11 @@ public interface VideoRepository extends JpaRepository<Video, Long> {
             """)
     List<VideoStatistics> findStatisticsByUploader(@Param("username") String username);
 
+    // US-03: videos shown on a profile (the author of an upload is the username of its uploader)
+    long countByAuthor(String author);
+
+    Page<Video> findByAuthor(String author, Pageable pageable);
+
     // Deleting an account: the videos it uploaded
     List<Video> findByUploader(User uploader);
 }
