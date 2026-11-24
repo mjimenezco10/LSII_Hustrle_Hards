@@ -2,7 +2,8 @@ import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/authContext';
 import Avatar from '../components/Avatar';
 import SubscribeButton from '../components/SubscribeButton';
-import VideoCard from '../components/VideoCard';
+import PagedListFooter from '../components/PagedListFooter';
+import VideoCardList from '../components/VideoCardList';
 import { useTranslation } from '../i18n/i18nContext';
 import { useSubscribedChannels } from '../subscriptions/useSubscribedChannels';
 import { useSubscriptionVideos } from '../subscriptions/useSubscriptionVideos';
@@ -91,39 +92,18 @@ const SubscriptionVideos = () => {
 
       {status === 'success' && videos.length === 0 && <p className="text-muted">{t('library.subscriptionsEmpty')}</p>}
 
-      {videos.length > 0 && (
-        <ul
-          aria-label={t('library.subscriptionsList')}
-          className="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-4 list-unstyled video-grid"
-        >
-          {videos.map((video) => (
-            <li key={video.id} className="col">
-              <VideoCard video={video} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <VideoCardList videos={videos} label={t('library.subscriptionsList')} />
 
-      <div className="d-flex flex-column align-items-center gap-2 my-4">
-        {status === 'loading' && (
-          <p role="status" className="text-muted mb-0">
-            {t('library.subscriptionsLoading')}
-          </p>
-        )}
-        {status === 'error' && (
-          <div role="alert" className="alert alert-danger d-flex align-items-center gap-3 mb-0">
-            <span>{t('library.subscriptionsError')}</span>
-            <button type="button" className="btn btn-outline-danger btn-sm" onClick={retry}>
-              {t('library.retry')}
-            </button>
-          </div>
-        )}
-        {status === 'success' && hasMore && (
-          <button type="button" className="btn btn-primary" onClick={loadMore}>
-            {t('library.loadMore')}
-          </button>
-        )}
-      </div>
+      <PagedListFooter
+        status={status}
+        hasMore={hasMore}
+        onLoadMore={loadMore}
+        onRetry={retry}
+        loadingText={t('library.subscriptionsLoading')}
+        errorText={t('library.subscriptionsError')}
+        retryText={t('library.retry')}
+        loadMoreText={t('library.loadMore')}
+      />
     </section>
   );
 };

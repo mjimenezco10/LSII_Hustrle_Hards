@@ -1,6 +1,7 @@
 import { useTranslation } from '../i18n/i18nContext';
 import { useVideoList } from '../videos/useVideoList';
-import VideoCard from './VideoCard';
+import PagedListFooter from './PagedListFooter';
+import VideoCardList from './VideoCardList';
 
 // Placeholders shown while the first page loads; fixed ids because they never change
 const SKELETON_IDS = Array.from({ length: 8 }, (_, index) => `skeleton-${index}`);
@@ -23,18 +24,7 @@ const VideoGrid = ({ query = '' }: Props) => {
 
   return (
     <section>
-      {videos.length > 0 && (
-        <ul
-          aria-label={query ? t('videos.resultsFor', { query }) : t('videos.listLabel')}
-          className="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-4 list-unstyled video-grid"
-        >
-          {videos.map((video) => (
-            <li key={video.id} className="col">
-              <VideoCard video={video} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <VideoCardList videos={videos} label={query ? t('videos.resultsFor', { query }) : t('videos.listLabel')} />
 
       {status === 'loading' && videos.length === 0 && (
         <ul className="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-4 list-unstyled" aria-hidden="true">
@@ -50,26 +40,17 @@ const VideoGrid = ({ query = '' }: Props) => {
         </ul>
       )}
 
-      <div className="d-flex flex-column align-items-center gap-2 my-4">
-        {status === 'loading' && (
-          <p role="status" className={videos.length === 0 ? 'visually-hidden' : 'text-muted mb-0'}>
-            {t('videos.loading')}
-          </p>
-        )}
-        {status === 'error' && (
-          <div role="alert" className="alert alert-danger d-flex align-items-center gap-3 mb-0">
-            <span>{t('videos.loadError')}</span>
-            <button type="button" className="btn btn-outline-danger btn-sm" onClick={retry}>
-              {t('videos.retry')}
-            </button>
-          </div>
-        )}
-        {status === 'success' && hasMore && (
-          <button type="button" className="btn btn-primary" onClick={loadMore}>
-            {t('videos.loadMore')}
-          </button>
-        )}
-      </div>
+      <PagedListFooter
+        status={status}
+        hasMore={hasMore}
+        onLoadMore={loadMore}
+        onRetry={retry}
+        loadingText={t('videos.loading')}
+        errorText={t('videos.loadError')}
+        retryText={t('videos.retry')}
+        loadMoreText={t('videos.loadMore')}
+        hideLoadingText={videos.length === 0}
+      />
     </section>
   );
 };
