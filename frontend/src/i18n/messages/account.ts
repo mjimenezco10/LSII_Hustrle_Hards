@@ -15,7 +15,7 @@ export const account = defineMessages(
     changeEmail: 'Change email',
     newEmail: 'New email',
     emailUpdated: 'Email updated.',
-    password: 'Password',
+    password: 'Password', // NOSONAR: label of the password field, not a password
     passwordHint: 'At least 8 characters.',
     googlePasswordHint: 'Your account uses Google sign-in. Set a password to also log in with your username.',
     changePassword: 'Change password',
@@ -46,7 +46,7 @@ export const account = defineMessages(
       changeEmail: 'Cambiar correo electrónico',
       newEmail: 'Nuevo correo electrónico',
       emailUpdated: 'Correo electrónico actualizado.',
-      password: 'Contraseña',
+      password: 'Contraseña', // NOSONAR: label of the password field, not a password
       passwordHint: 'Al menos 8 caracteres.',
       googlePasswordHint:
         'Tu cuenta usa el inicio de sesión con Google. Crea una contraseña para entrar también con tu nombre de usuario.',
@@ -77,7 +77,7 @@ export const account = defineMessages(
       changeEmail: 'Canvia el correu electrònic',
       newEmail: 'Nou correu electrònic',
       emailUpdated: "S'ha actualitzat el correu electrònic.",
-      password: 'Contrasenya',
+      password: 'Contrasenya', // NOSONAR: label of the password field, not a password
       passwordHint: 'Com a mínim 8 caràcters.',
       googlePasswordHint:
         "El teu compte fa servir l'inici de sessió amb Google. Crea una contrasenya per entrar també amb el teu nom d'usuari.",
