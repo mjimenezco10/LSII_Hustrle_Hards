@@ -15,7 +15,8 @@ export default {
   },
   collectCoverage: true,
   // lcov is read by SonarQube (sonar-project.properties)
-  coverageReporters: ['json', 'html', 'lcov'],
+  // lcov paths relative to the repo root (frontend/src/...), as SonarQube reads them from sonar-project.properties
+  coverageReporters: ['json', 'html', ['lcov', { projectRoot: '..' }]],
   coverageThreshold: {
     global: {
       branches: 75,

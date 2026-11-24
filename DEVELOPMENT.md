@@ -206,6 +206,13 @@ The first time, log in at http://localhost:9000 with `admin` / `admin`, change t
 **My Account → Security**. Keep the token in your root `.env` (`SONAR_TOKEN=...`), never in the repo. Results:
 http://localhost:9000/dashboard?id=VegaAlbert_LSII_Hustrle_Hards. The data is kept in Docker volumes between runs.
 
+* Coverage must be imported for both apps: Jest writes `frontend/coverage/lcov.info` with paths relative to the repo
+  root (`frontend/src/...`, `projectRoot` in `jest.config.ts`), the same base as `sonar-project.properties`. With
+  paths like `src/...` SonarQube cannot match them and shows the frontend at 0% coverage.
+* Run the scanner from a normal clone: in a `git worktree` it fails with "Unable to open Git repository" (the
+  scanner cannot follow the worktree's `.git` file); add `-Dsonar.scm.disabled=true` there.
+* On Apple Silicon the scanner image runs emulated (amd64): it works, only slower.
+
 **In CI**, through [SonarCloud](https://sonarcloud.io) (free for public repositories). A repository admin sets it up
 once:
 
