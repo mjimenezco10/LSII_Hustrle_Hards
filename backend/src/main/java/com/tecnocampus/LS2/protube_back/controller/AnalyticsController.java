@@ -1,5 +1,6 @@
 package com.tecnocampus.LS2.protube_back.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.tecnocampus.LS2.protube_back.controller.dto.AnalyticsResponse;
 import com.tecnocampus.LS2.protube_back.services.AnalyticsService;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Tag(name = "Analytics", description = "US-11: views, likes and subscribers of my videos")
 @RequestMapping("/api/analytics")
 public class AnalyticsController {
 

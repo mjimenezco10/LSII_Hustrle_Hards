@@ -1,5 +1,6 @@
 package com.tecnocampus.LS2.protube_back.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.tecnocampus.LS2.protube_back.controller.dto.AuthResponse;
 import com.tecnocampus.LS2.protube_back.controller.dto.ChangeEmailRequest;
 import com.tecnocampus.LS2.protube_back.controller.dto.ChangePasswordRequest;
@@ -27,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
  * session (token and user) that the frontend keeps instead of the old one.
  */
 @RestController
+@Tag(name = "Account", description = "Settings of the logged-in user: username, email, password, profile, avatar and account deletion")
 @RequestMapping("/api/account")
 public class AccountController {
 

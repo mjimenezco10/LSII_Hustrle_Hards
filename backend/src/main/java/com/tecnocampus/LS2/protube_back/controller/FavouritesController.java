@@ -1,5 +1,6 @@
 package com.tecnocampus.LS2.protube_back.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.tecnocampus.LS2.protube_back.controller.dto.FavouriteResponse;
 import com.tecnocampus.LS2.protube_back.controller.dto.PageResponse;
 import com.tecnocampus.LS2.protube_back.controller.dto.VideoSummaryResponse;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  * US-12: favourite videos of the logged-in user. Every route answers 401 without a valid token (see SecurityConfig).
  */
 @RestController
+@Tag(name = "Favourites", description = "US-12: videos saved as favourites by the logged-in user")
 @RequestMapping("/api/favourites")
 public class FavouritesController {
 

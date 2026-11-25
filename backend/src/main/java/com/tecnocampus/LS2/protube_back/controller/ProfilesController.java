@@ -1,5 +1,6 @@
 package com.tecnocampus.LS2.protube_back.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.tecnocampus.LS2.protube_back.controller.dto.PageResponse;
 import com.tecnocampus.LS2.protube_back.controller.dto.ProfileResponse;
 import com.tecnocampus.LS2.protube_back.controller.dto.VideoSummaryResponse;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
  * and /api/account/avatar.
  */
 @RestController
+@Tag(name = "Profiles", description = "US-03: public profile of a user or channel and its videos")
 @RequestMapping("/api/profiles")
 public class ProfilesController {
 

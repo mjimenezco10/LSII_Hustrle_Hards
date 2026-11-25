@@ -34,6 +34,9 @@ public class SecurityConfig {
                 .logout(AbstractHttpConfigurer::disable)
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(auth -> auth
+                        // Documentation: the OpenAPI description and Swagger UI are public
+                        .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
+                        .permitAll()
                         .requestMatchers("/api/auth/me").authenticated()
                         // Account settings always belong to the logged-in user
                         .requestMatchers("/api/account", "/api/account/**").authenticated()
