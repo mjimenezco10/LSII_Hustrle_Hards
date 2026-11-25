@@ -47,7 +47,7 @@
   height: 88px;
   margin-bottom: 0.5rem;
   border-radius: 50%;
-  color: var(--pt-primary);
+  color: var(--pt-primary-text);
   background: var(--pt-bg-body);
 }
 

@@ -53,7 +53,7 @@
 
 .video-author a:hover,
 .video-author a:focus-visible {
-  color: var(--pt-primary);
+  color: var(--pt-primary-text);
   text-decoration: underline;
 }
 
@@ -117,7 +117,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--pt-primary);
+  color: var(--pt-primary-text);
 }
 
 /* Keep the line breaks of descriptions and comments */
@@ -137,7 +137,7 @@
 /* Two classes so it wins over Bootstrap's .btn-link, which is loaded after this file */
 .btn.expandable-toggle {
   font-weight: 600;
-  color: var(--pt-primary);
+  color: var(--pt-primary-text);
   text-decoration: none;
 }
 
@@ -271,7 +271,7 @@
 }
 
 .comment-like.is-liked {
-  color: var(--pt-primary);
+  color: var(--pt-primary-text);
   border-color: var(--pt-primary);
 }
 
@@ -414,7 +414,7 @@
 
 .video-card:hover .video-card-title a,
 .video-card-title a:focus-visible {
-  color: var(--pt-primary);
+  color: var(--pt-primary-text);
 }
 
 /* The stretched link covers the whole card: draw its focus ring around the thumbnail */
@@ -527,7 +527,7 @@
 }
 
 .tag-chip button:hover {
-  color: var(--pt-primary);
+  color: var(--pt-primary-text);
 }
 
 .hashtag-chip {
@@ -772,7 +772,7 @@
 /* ===== Favourites (US-12) ===== */
 
 .favourite-btn.is-favourite {
-  color: var(--pt-primary);
+  color: var(--pt-primary-text);
   border-color: var(--pt-primary);
 }
 
