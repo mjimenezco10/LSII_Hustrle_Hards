@@ -37,6 +37,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/me").authenticated()
                         // Account settings always belong to the logged-in user
                         .requestMatchers("/api/account", "/api/account/**").authenticated()
+                        // US-03: anyone sees the public profiles; the owner edits theirs under /api/account
+                        .requestMatchers(HttpMethod.GET, "/api/profiles/**").permitAll()
                         // US-12: favourites always belong to the logged-in user
                         .requestMatchers("/api/favourites/**").authenticated()
                         // US-13: anyone sees the subscribers of a channel, only logged-in users subscribe

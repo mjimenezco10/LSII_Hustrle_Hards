@@ -115,6 +115,18 @@ class AccountDeletionServiceTest {
     }
 
     @Test
+    void alsoDeletesTheAvatarOfTheAccount() throws IOException {
+        Files.createDirectories(store.resolve("avatars"));
+        Files.writeString(store.resolve("avatars/alice.webp"), "avatar");
+        alice.changeAvatar("avatars/alice.webp");
+        when(passwordEncoder.matches("password123", "hash")).thenReturn(true);
+
+        service.deleteAccount("alice", new DeleteAccountRequest("password123", null));
+
+        assertFalse(Files.exists(store.resolve("avatars/alice.webp")));
+    }
+
+    @Test
     void insideATransactionTheFilesAreDeletedOnlyAfterTheCommit() throws IOException {
         Video video = uploadedVideo();
         when(passwordEncoder.matches("password123", "hash")).thenReturn(true);

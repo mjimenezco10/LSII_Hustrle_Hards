@@ -9,6 +9,7 @@ import com.tecnocampus.LS2.protube_back.services.InvalidGoogleTokenException;
 import com.tecnocampus.LS2.protube_back.services.InvalidSubscriptionException;
 import com.tecnocampus.LS2.protube_back.services.InvalidUploadException;
 import com.tecnocampus.LS2.protube_back.services.LocalizedException;
+import com.tecnocampus.LS2.protube_back.services.ProfileNotFoundException;
 import com.tecnocampus.LS2.protube_back.services.RatingConflictException;
 import com.tecnocampus.LS2.protube_back.services.UserAlreadyExistsException;
 import com.tecnocampus.LS2.protube_back.services.VideoAccessDeniedException;
@@ -162,6 +163,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(ChannelNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleChannelNotFound(ChannelNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(text(e)));
+    }
+
+    @ExceptionHandler(ProfileNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleProfileNotFound(ProfileNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(text(e)));
     }
 
