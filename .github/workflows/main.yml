@@ -38,7 +38,8 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: frontend
-        run: npm ci
+        # --ignore-scripts: no dependency runs install scripts (their prebuilt binaries are enough)
+        run: npm ci --ignore-scripts
 
       - name: Build frontend
         working-directory: frontend
@@ -70,7 +71,7 @@ jobs:
 
       - name: Check frontend formatting
         working-directory: frontend
-        run: npx prettier --check .
+        run: npm run format:check
 
       # Upload Frontend Coverage
       - name: Upload Frontend Coverage Report
@@ -91,7 +92,7 @@ jobs:
       # Code smells, bugs and coverage (sonar-project.properties), with the reports generated above
       - name: SonarCloud analysis
         if: ${{ env.SONAR_TOKEN != '' }}
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5
         env:
           SONAR_HOST_URL: https://sonarcloud.io
         with:
@@ -126,15 +127,17 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: frontend
-        run: npm ci
+        # --ignore-scripts: no dependency runs install scripts (their prebuilt binaries are enough)
+        run: npm ci --ignore-scripts
 
       - name: Install E2E dependencies
         working-directory: e2e
-        run: npm ci
+        # --ignore-scripts: no dependency runs install scripts (their prebuilt binaries are enough)
+        run: npm ci --ignore-scripts
 
       - name: Install Playwright browser
         working-directory: e2e
-        run: npx playwright install --with-deps chromium
+        run: npm run install-browsers
 
       - name: Type-check E2E tests
         working-directory: e2e

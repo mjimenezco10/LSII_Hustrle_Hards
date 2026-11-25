@@ -1,6 +1,20 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { BACKEND_URL } from "../env";
-import { newUser, userMenu } from "./support";
+import { newUser, registerNewUser, userMenu } from "./support";
+
+/** An unsigned JWT for `sub` that expires `seconds` from now (the frontend only reads its "exp" before renewing). */
+function fakeToken(sub: string, seconds: number): string {
+  const payload = { sub, exp: Math.floor(Date.now() / 1000) + seconds };
+  return `e30.${Buffer.from(JSON.stringify(payload)).toString("base64url")}.signature`;
+}
+
+/** Opens the app with this session stored (same key and format as src/auth/session.ts in the frontend). */
+async function storeSession(page: Page, session: object): Promise<void> {
+  await page.addInitScript(
+    (value) => localStorage.setItem("protube.session", value),
+    JSON.stringify(session),
+  );
+}
 
 test.describe("Authentication", () => {
   test("a visitor registers, logs out and logs in again", async ({ page }) => {
@@ -61,11 +75,7 @@ test.describe("Authentication", () => {
     page,
     request,
   }) => {
-    const user = newUser();
-    const created = await request.post(`${BACKEND_URL}/api/auth/register`, {
-      data: user,
-    });
-    expect(created.status()).toBe(201);
+    const user = await registerNewUser(request);
 
     await page.goto("/login");
     await page.getByRole("button", { name: "Register", exact: true }).click();
@@ -82,11 +92,7 @@ test.describe("Authentication", () => {
     page,
     request,
   }) => {
-    const user = newUser();
-    const created = await request.post(`${BACKEND_URL}/api/auth/register`, {
-      data: user,
-    });
-    expect(created.status()).toBe(201);
+    const user = await registerNewUser(request);
 
     await page.goto("/login");
     await page.getByRole("button", { name: "Register", exact: true }).click();
@@ -121,21 +127,11 @@ test.describe("Authentication", () => {
     });
     expect(created.status()).toBe(201);
     const session = await created.json();
-    // Same session, but its access token expired a minute ago (only its "exp" is read before renewing it)
-    const payload = Buffer.from(
-      JSON.stringify({
-        sub: user.username,
-        exp: Math.floor(Date.now() / 1000) - 60,
-      }),
-    );
-    const expired = {
+    // Same session, but its access token expired a minute ago
+    await storeSession(page, {
       ...session,
-      token: `e30.${payload.toString("base64url")}.signature`,
-    };
-    await page.addInitScript(
-      (value) => localStorage.setItem("protube.session", value),
-      JSON.stringify(expired),
-    );
+      token: fakeToken(user.username, -60),
+    });
 
     const renewal = page.waitForResponse((response) =>
       response.url().endsWith("/api/auth/refresh"),
@@ -155,27 +151,11 @@ test.describe("Authentication", () => {
   });
 
   test("a session whose refresh token is rejected ends", async ({ page }) => {
-    const payload = Buffer.from(
-      JSON.stringify({
-        sub: "ghost_e2e",
-        exp: Math.floor(Date.now() / 1000) - 60,
-      }),
-    );
-    const refreshPayload = Buffer.from(
-      JSON.stringify({
-        sub: "ghost_e2e",
-        exp: Math.floor(Date.now() / 1000) + 3600,
-      }),
-    );
-    const forged = {
-      token: `e30.${payload.toString("base64url")}.signature`,
-      refreshToken: `e30.${refreshPayload.toString("base64url")}.signature`,
+    await storeSession(page, {
+      token: fakeToken("ghost_e2e", -60),
+      refreshToken: fakeToken("ghost_e2e", 3600),
       user: { id: 0, username: "ghost_e2e", email: "ghost@e2e.test" },
-    };
-    await page.addInitScript(
-      (value) => localStorage.setItem("protube.session", value),
-      JSON.stringify(forged),
-    );
+    });
 
     await page.goto("/");
 

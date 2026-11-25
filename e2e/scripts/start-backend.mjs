@@ -14,7 +14,9 @@ const DB_CONTAINER = 'protube_e2e_db';
 const DB_PORT = process.env.E2E_DB_PORT ?? '5433';
 const DB = { name: 'protube_e2e', user: 'protube', password: 'protube' };
 
-const docker = (...args) => spawnSync('docker', args, { stdio: 'pipe', encoding: 'utf8' });
+// Docker command, like E2E_MAVEN for Maven: an absolute path can be given instead of looking it up in PATH
+const dockerCommand = process.env.E2E_DOCKER ?? 'docker';
+const docker = (...args) => spawnSync(dockerCommand, args, { stdio: 'pipe', encoding: 'utf8' });
 
 function stopDatabase() {
   docker('rm', '-f', DB_CONTAINER);

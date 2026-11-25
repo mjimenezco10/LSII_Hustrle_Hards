@@ -25,8 +25,8 @@ The Maven wrapper is not committed: use `mvn` locally (CI generates `./mvnw`).
   `SONAR_TOKEN=<token> docker compose --profile sonar run --rm sonar-scanner` → http://localhost:9000. In CI it runs
   on SonarCloud once the `SONAR_TOKEN` secret exists (see DEVELOPMENT.md).
 
-Before opening a PR, run what CI runs (`.github/workflows/main.yml`): frontend `npm ci`, `npm run build`,
-`npm run test`, `npm run lint`, `npx prettier --check .`; backend `mvn clean verify -Pcoverage`; e2e
+Before opening a PR, run what CI runs (`.github/workflows/main.yml`): frontend `npm ci --ignore-scripts`,
+`npm run build`, `npm run test`, `npm run lint`, `npm run format:check`; backend `mvn clean verify -Pcoverage`; e2e
 `npm run typecheck`, `npm test`.
 
 ## Environment
