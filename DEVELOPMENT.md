@@ -105,6 +105,9 @@ mvn spring-boot:run
 * From IntelliJ you can instead use the shared **ProtubeBackApplication** run configuration (`.run/`); it reads
   `ENV_PROTUBE_STORE_DIR` from your environment (section 2). Do not commit personal values in `.run/`.
 * CORS is open for `/api/**` and `/auth/**`, so the Vite dev server can call the API directly.
+* API documentation: **Swagger UI** at http://localhost:8080/swagger-ui.html and the OpenAPI description at
+  http://localhost:8080/v3/api-docs (springdoc, only the `/api/**` endpoints). To try the endpoints that need a user,
+  log in with `POST /api/auth/login`, click **Authorize** and paste the token. Both are public, also in `prod`.
 
 ### Frontend
 

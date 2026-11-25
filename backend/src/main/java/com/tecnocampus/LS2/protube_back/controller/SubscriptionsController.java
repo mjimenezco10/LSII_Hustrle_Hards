@@ -1,5 +1,6 @@
 package com.tecnocampus.LS2.protube_back.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.tecnocampus.LS2.protube_back.controller.dto.PageResponse;
 import com.tecnocampus.LS2.protube_back.controller.dto.SubscriberCountResponse;
 import com.tecnocampus.LS2.protube_back.controller.dto.SubscriptionResponse;
@@ -24,6 +25,7 @@ import java.util.List;
  * of a channel is public; every other route answers 401 without a valid token (see SecurityConfig).
  */
 @RestController
+@Tag(name = "Subscriptions", description = "US-13: subscribe to channels and list their videos")
 @RequestMapping("/api/subscriptions")
 public class SubscriptionsController {
 
