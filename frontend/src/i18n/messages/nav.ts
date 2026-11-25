@@ -17,7 +17,7 @@ export const nav = defineMessages(
     themeDark: 'Dark',
     themeSystem: 'System',
     language: 'Language',
-    languageCurrent: 'Language: {language}',
+    languageCurrent: 'Language: {language}, {code}',
   },
   {
     es: {
@@ -35,7 +35,7 @@ export const nav = defineMessages(
       themeDark: 'Oscuro',
       themeSystem: 'Sistema',
       language: 'Idioma',
-      languageCurrent: 'Idioma: {language}',
+      languageCurrent: 'Idioma: {language}, {code}',
     },
     ca: {
       create: 'Crea',
@@ -52,7 +52,7 @@ export const nav = defineMessages(
       themeDark: 'Fosc',
       themeSystem: 'Sistema',
       language: 'Idioma',
-      languageCurrent: 'Idioma: {language}',
+      languageCurrent: 'Idioma: {language}, {code}',
     },
   }
 );

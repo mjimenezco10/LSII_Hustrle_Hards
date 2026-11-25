@@ -9,6 +9,7 @@ import HomePage from './pages/HomePage';
 import FavouritesPage from './pages/FavouritesPage';
 import EditVideoPage from './pages/EditVideoPage';
 import NotFoundPage from './pages/NotFoundPage';
+import ProfilePage from './pages/ProfilePage';
 import SubscriptionsPage from './pages/SubscriptionsPage';
 import UploadPage from './pages/UploadPage';
 import { ThemeProvider } from './theme/ThemeProvider';
@@ -35,6 +36,8 @@ export const AppRoutes = () => (
       <Route path="analytics" element={<AnalyticsPage />} />
       <Route path="favourites" element={<FavouritesPage />} />
       <Route path="subscriptions" element={<SubscriptionsPage />} />
+      {/* US-03 */}
+      <Route path="profile/:name" element={<ProfilePage />} />
       <Route path="videos/:id" element={<VideoDetailPage />} />
       <Route path="videos/:id/edit" element={<EditVideoPage />} />
       <Route path="*" element={<NotFoundPage />} />

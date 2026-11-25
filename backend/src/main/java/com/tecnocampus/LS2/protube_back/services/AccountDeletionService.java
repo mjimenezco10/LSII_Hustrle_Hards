@@ -97,8 +97,10 @@ public class AccountDeletionService {
 
         // Removed as entities so their tags go with them; their comments are already deleted
         List<Video> videos = videoRepository.findByUploader(user);
-        List<Path> files = videos.stream()
-                .flatMap(video -> Stream.of(video.getVideoFile(), video.getThumbnailFile()))
+        // US-03: the avatar goes with the videos
+        List<Path> files = Stream.concat(
+                        videos.stream().flatMap(video -> Stream.of(video.getVideoFile(), video.getThumbnailFile())),
+                        Stream.ofNullable(user.getAvatarFile()))
                 .map(storeDir::resolve)
                 .toList();
         videoRepository.deleteAll(videos);

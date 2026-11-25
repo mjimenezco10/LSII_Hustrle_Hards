@@ -15,13 +15,15 @@ export default {
   },
   collectCoverage: true,
   // lcov is read by SonarQube (sonar-project.properties)
-  coverageReporters: ['json', 'html', 'lcov'],
+  // lcov paths relative to the repo root (frontend/src/...), as SonarQube reads them from sonar-project.properties
+  coverageReporters: ['json', 'html', ['lcov', { projectRoot: '..' }]],
+  // NFR-05 asks for 50%; the team enforces more than 90% (README improvement "More than 90% of test coverage")
   coverageThreshold: {
     global: {
-      branches: 75,
-      functions: 75,
-      lines: 75,
-      statements: 75,
+      branches: 90,
+      functions: 90,
+      lines: 90,
+      statements: 90,
     },
   },
 };

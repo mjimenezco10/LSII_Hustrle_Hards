@@ -105,6 +105,9 @@ mvn spring-boot:run
 * From IntelliJ you can instead use the shared **ProtubeBackApplication** run configuration (`.run/`); it reads
   `ENV_PROTUBE_STORE_DIR` from your environment (section 2). Do not commit personal values in `.run/`.
 * CORS is open for `/api/**` and `/auth/**`, so the Vite dev server can call the API directly.
+* API documentation: **Swagger UI** at http://localhost:8080/swagger-ui.html and the OpenAPI description at
+  http://localhost:8080/v3/api-docs (springdoc, only the `/api/**` endpoints). To try the endpoints that need a user,
+  log in with `POST /api/auth/login`, click **Authorize** and paste the token. Both are public, also in `prod`.
 
 ### Frontend
 
@@ -147,7 +150,10 @@ npm run lint-fix                          # ESLint with autofix
 npm run format                            # Prettier
 ```
 
-The MVP requires **more than 50% coverage** on both apps.
+The MVP requires **more than 50% coverage** on both apps (NFR-05); the team enforces **at least 90%**, so the build
+fails below it. Backend: JaCoCo in `backend/pom.xml` checks 90% of instructions, lines, branches and methods of the
+whole backend, and 50% of the lines of every class. Frontend: `coverageThreshold` in `frontend/jest.config.ts`
+checks 90% of statements, branches, functions and lines.
 
 ### End-to-end (Playwright)
 
@@ -205,6 +211,13 @@ docker compose --profile sonar stop sonarqube              # when you are done
 The first time, log in at http://localhost:9000 with `admin` / `admin`, change the password and create a token in
 **My Account → Security**. Keep the token in your root `.env` (`SONAR_TOKEN=...`), never in the repo. Results:
 http://localhost:9000/dashboard?id=VegaAlbert_LSII_Hustrle_Hards. The data is kept in Docker volumes between runs.
+
+* Coverage must be imported for both apps: Jest writes `frontend/coverage/lcov.info` with paths relative to the repo
+  root (`frontend/src/...`, `projectRoot` in `jest.config.ts`), the same base as `sonar-project.properties`. With
+  paths like `src/...` SonarQube cannot match them and shows the frontend at 0% coverage.
+* Run the scanner from a normal clone: in a `git worktree` it fails with "Unable to open Git repository" (the
+  scanner cannot follow the worktree's `.git` file); add `-Dsonar.scm.disabled=true` there.
+* On Apple Silicon the scanner image runs emulated (amd64): it works, only slower.
 
 **In CI**, through [SonarCloud](https://sonarcloud.io) (free for public repositories). A repository admin sets it up
 once:

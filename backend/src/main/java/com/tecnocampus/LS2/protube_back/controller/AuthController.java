@@ -1,5 +1,6 @@
 package com.tecnocampus.LS2.protube_back.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.tecnocampus.LS2.protube_back.controller.dto.AuthResponse;
 import com.tecnocampus.LS2.protube_back.controller.dto.GoogleConfigResponse;
 import com.tecnocampus.LS2.protube_back.controller.dto.GoogleLoginRequest;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Tag(name = "Authentication", description = "Register, log in (username or Google) and the current user")
 @RequestMapping("/api/auth")
 public class AuthController {
 

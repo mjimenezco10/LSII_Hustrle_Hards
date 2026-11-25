@@ -12,6 +12,8 @@ type Props = {
   onUpload: () => void;
   // US-11: "Analytics" item of the user menu
   onAnalytics?: () => void;
+  // US-03: opens the profile of the logged-in user
+  onProfile?: (username: string) => void;
   // US-12: opens the favourite videos of the user
   onFavourites?: () => void;
   // US-13: opens the videos of the channels the user is subscribed to
@@ -28,6 +30,7 @@ const NavBar = ({
   onFavourites,
   onSubscriptions,
   onAnalytics = () => {},
+  onProfile,
   showLogin = true,
 }: Props) => {
   const { user, logout } = useAuth();
@@ -42,6 +45,11 @@ const NavBar = ({
   const handleSubscriptions = () => {
     setMenuOpen(false);
     onSubscriptions?.();
+  };
+
+  const handleProfile = (username: string) => {
+    setMenuOpen(false);
+    onProfile?.(username);
   };
 
   const handleAnalytics = () => {
@@ -105,6 +113,13 @@ const NavBar = ({
                   <strong>{user.username}</strong>
                   <small>{user.email}</small>
                 </li>
+                {onProfile && (
+                  <li>
+                    <button type="button" className="pt-menu-item" onClick={() => handleProfile(user.username)}>
+                      {t('profile.menuProfile')}
+                    </button>
+                  </li>
+                )}
                 {onFavourites && (
                   <li>
                     <button type="button" className="pt-menu-item" onClick={handleFavourites}>

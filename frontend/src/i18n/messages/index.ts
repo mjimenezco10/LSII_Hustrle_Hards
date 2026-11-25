@@ -1,3 +1,4 @@
+import { account } from './account';
 import { analytics } from './analytics';
 import { auth } from './auth';
 import { categories } from './categories';
@@ -5,6 +6,7 @@ import { comments } from './comments';
 import { common } from './common';
 import { library } from './library';
 import { nav } from './nav';
+import { profile } from './profile';
 import { settings } from './settings';
 import { upload } from './upload';
 import { video } from './video';
@@ -15,6 +17,7 @@ import { videos } from './videos';
  * file with defineMessages() and list it here.
  */
 export const MESSAGES = {
+  account,
   analytics,
   auth,
   categories,
@@ -22,6 +25,7 @@ export const MESSAGES = {
   common,
   library,
   nav,
+  profile,
   settings,
   upload,
   video,

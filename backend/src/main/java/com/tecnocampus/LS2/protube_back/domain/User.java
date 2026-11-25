@@ -39,6 +39,19 @@ public class User {
     @Column(nullable = false)
     private Instant createdAt;
 
+    // US-03: public profile. All optional, so the rows that existed before these columns stay valid
+    @Column(length = 500)
+    private String description;
+
+    @Column(length = 100)
+    private String location;
+
+    @Column(length = 200)
+    private String website;
+
+    // Path of the avatar image relative to the video store, e.g. avatars/<uuid>.webp (served under /media/)
+    private String avatarFile;
+
     protected User() {
         // Required by JPA
     }
@@ -103,5 +116,34 @@ public class User {
     public void changePassword(String passwordHash) {
         this.passwordHash = passwordHash;
         this.passwordSet = true;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public String getWebsite() {
+        return website;
+    }
+
+    public String getAvatarFile() {
+        return avatarFile;
+    }
+
+    /**
+     * US-03: replaces the editable fields of the profile; null clears a field.
+     */
+    public void updateProfile(String description, String location, String website) {
+        this.description = description;
+        this.location = location;
+        this.website = website;
+    }
+
+    public void changeAvatar(String avatarFile) {
+        this.avatarFile = avatarFile;
     }
 }

@@ -1,0 +1,73 @@
+/* US-03: profile page of a user or channel */
+.profile-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--pt-border);
+}
+
+.profile-info {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.profile-name {
+  margin-bottom: 0.25rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.profile-description {
+  margin-bottom: 0.5rem;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  color: var(--pt-text-primary);
+}
+
+.profile-website {
+  overflow-wrap: anywhere;
+  color: var(--pt-info);
+}
+
+.profile-actions {
+  flex-shrink: 0;
+}
+
+.profile-edit {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-radius-lg);
+  background: var(--pt-surface);
+}
+
+.profile-edit-avatar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-success {
+  color: var(--pt-success);
+}
+
+.profile-error {
+  color: var(--pt-danger);
+}
+
+/* Phones: avatar and name stacked and centred */
+@media (max-width: 575.98px) {
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .profile-info {
+    flex-basis: auto;
+  }
+}
