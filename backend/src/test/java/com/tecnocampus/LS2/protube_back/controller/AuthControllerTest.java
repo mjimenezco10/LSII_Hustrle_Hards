@@ -237,4 +237,81 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.credential").value("Google credential is required"));
     }
+
+    private String refreshTokenOf(String username, String email) throws Exception {
+        String response = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody(username, email, "password123")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readTree(response).get("refreshToken").asText();
+    }
+
+    private String refreshBody(String refreshToken) {
+        return """
+                {"refreshToken": "%s"}
+                """.formatted(refreshToken);
+    }
+
+    @Test
+    void refreshGivesANewSessionThatWorks() throws Exception {
+        String refreshToken = refreshTokenOf("alice", "alice@mail.com");
+
+        String response = mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(refreshBody(refreshToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.username").value("alice"))
+                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                .andReturn().getResponse().getContentAsString();
+        String token = objectMapper.readTree(response).get("token").asText();
+
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("alice"));
+    }
+
+    @Test
+    void refreshRejectsAnAccessToken() throws Exception {
+        String accessToken = register("alice", "alice@mail.com");
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(refreshBody(accessToken)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void refreshRejectsAnInvalidToken() throws Exception {
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(refreshBody("not-a-jwt")))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void refreshRequiresAToken() throws Exception {
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void refreshTokenIsNotAcceptedForRequests() throws Exception {
+        String refreshToken = refreshTokenOf("alice", "alice@mail.com");
+
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + refreshToken))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void googleConfigReturnsTheClientIdOfTheBackend() throws Exception {
+        when(googleTokenVerifier.getClientId()).thenReturn("client-id.apps.googleusercontent.com");
+
+        mockMvc.perform(get("/api/auth/google/config"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clientId").value("client-id.apps.googleusercontent.com"));
+    }
 }

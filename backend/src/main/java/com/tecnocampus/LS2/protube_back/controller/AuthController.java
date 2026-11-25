@@ -2,8 +2,10 @@ package com.tecnocampus.LS2.protube_back.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.tecnocampus.LS2.protube_back.controller.dto.AuthResponse;
+import com.tecnocampus.LS2.protube_back.controller.dto.GoogleConfigResponse;
 import com.tecnocampus.LS2.protube_back.controller.dto.GoogleLoginRequest;
 import com.tecnocampus.LS2.protube_back.controller.dto.LoginRequest;
+import com.tecnocampus.LS2.protube_back.controller.dto.RefreshTokenRequest;
 import com.tecnocampus.LS2.protube_back.controller.dto.RegisterRequest;
 import com.tecnocampus.LS2.protube_back.controller.dto.UserResponse;
 import com.tecnocampus.LS2.protube_back.services.AuthService;
@@ -45,6 +47,22 @@ public class AuthController {
     @PostMapping("/google")
     public ResponseEntity<AuthResponse> loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request) {
         return ResponseEntity.ok(authService.loginWithGoogle(request.credential()));
+    }
+
+    /**
+     * Client id of "Sign in with Google", so the frontend gets it from the backend at runtime (empty: disabled).
+     */
+    @GetMapping("/google/config")
+    public ResponseEntity<GoogleConfigResponse> googleConfig() {
+        return ResponseEntity.ok(new GoogleConfigResponse(authService.getGoogleClientId()));
+    }
+
+    /**
+     * Exchanges a refresh token for a new session (new access and refresh tokens). Answers 401 if it is not valid.
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        return ResponseEntity.ok(authService.refresh(request.refreshToken()));
     }
 
     /**

@@ -4,12 +4,15 @@ import { I18nProvider } from '../../i18n/I18nProvider';
 import { LANGUAGE_STORAGE_KEY } from '../../i18n/languagePreference';
 import { getEnv } from '../../utils/Env';
 import { loadGoogleIdentity, type GoogleCredentialResponse } from '../../auth/googleIdentity';
+import { fetchGoogleClientId } from '../../auth/authApi';
 
 jest.mock('../../utils/Env', () => ({ getEnv: jest.fn() }));
 jest.mock('../../auth/googleIdentity', () => ({ loadGoogleIdentity: jest.fn() }));
+jest.mock('../../auth/authApi', () => ({ fetchGoogleClientId: jest.fn() }));
 
 const mockedGetEnv = getEnv as jest.Mock;
 const mockedLoad = loadGoogleIdentity as jest.Mock;
+const mockedFetchClientId = fetchGoogleClientId as jest.Mock;
 
 const initialize = jest.fn();
 const renderButton = jest.fn();
@@ -27,13 +30,41 @@ describe('GoogleLoginButton', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     mockedLoad.mockResolvedValue(google);
+    mockedFetchClientId.mockResolvedValue('');
   });
 
-  it('shows nothing when Google login is not configured', () => {
+  it('shows nothing when Google login is not configured', async () => {
     const { container } = renderButtonWith('');
 
+    await waitFor(() => expect(mockedFetchClientId).toHaveBeenCalled());
     expect(container).toBeEmptyDOMElement();
     expect(mockedLoad).not.toHaveBeenCalled();
+  });
+
+  it('uses the client id of the backend when the build has none', async () => {
+    mockedFetchClientId.mockResolvedValue('backend-client-id');
+
+    renderButtonWith('');
+
+    await waitFor(() =>
+      expect(initialize).toHaveBeenCalledWith(expect.objectContaining({ client_id: 'backend-client-id' }))
+    );
+  });
+
+  it('stays hidden when the backend cannot be reached', async () => {
+    mockedFetchClientId.mockRejectedValue(new Error('Network Error'));
+
+    const { container } = renderButtonWith('');
+
+    await waitFor(() => expect(mockedFetchClientId).toHaveBeenCalled());
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('does not ask the backend when the build has a client id', async () => {
+    renderButtonWith('client-id');
+
+    await waitFor(() => expect(initialize).toHaveBeenCalled());
+    expect(mockedFetchClientId).not.toHaveBeenCalled();
   });
 
   it("renders Google's button with our client id", async () => {

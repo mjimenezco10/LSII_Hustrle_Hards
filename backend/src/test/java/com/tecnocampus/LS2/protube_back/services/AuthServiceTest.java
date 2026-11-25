@@ -218,4 +218,41 @@ class AuthServiceTest {
         assertThrows(InvalidGoogleTokenException.class, () -> authService.loginWithGoogle("bad"));
         verify(userRepository, never()).save(any());
     }
+
+    @Test
+    void refreshShouldReturnNewTokensForAValidRefreshToken() {
+        when(jwtService.extractRefreshUsername("refresh")).thenReturn(Optional.of("alice"));
+        when(userRepository.findByUsername("alice"))
+                .thenReturn(Optional.of(new User("alice", "alice@mail.com", "hashed")));
+        when(jwtService.generateToken("alice")).thenReturn("new-access");
+        when(jwtService.generateRefreshToken("alice")).thenReturn("new-refresh");
+
+        AuthResponse response = authService.refresh("refresh");
+
+        assertEquals("new-access", response.token());
+        assertEquals("new-refresh", response.refreshToken());
+        assertEquals("alice", response.user().username());
+    }
+
+    @Test
+    void refreshShouldFailWithAnInvalidToken() {
+        when(jwtService.extractRefreshUsername("bad")).thenReturn(Optional.empty());
+
+        assertThrows(InvalidRefreshTokenException.class, () -> authService.refresh("bad"));
+    }
+
+    @Test
+    void refreshShouldFailWhenUserNoLongerExists() {
+        when(jwtService.extractRefreshUsername("refresh")).thenReturn(Optional.of("ghost"));
+        when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+
+        assertThrows(InvalidRefreshTokenException.class, () -> authService.refresh("refresh"));
+    }
+
+    @Test
+    void googleClientIdShouldComeFromTheVerifier() {
+        when(googleTokenVerifier.getClientId()).thenReturn("client-id");
+
+        assertEquals("client-id", authService.getGoogleClientId());
+    }
 }

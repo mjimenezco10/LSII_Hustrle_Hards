@@ -31,15 +31,29 @@ public class GoogleTokenVerifier {
     static final Set<String> GOOGLE_ISSUERS = Set.of("https://accounts.google.com", "accounts.google.com");
 
     private final JwtDecoder decoder;
+    // Public: the frontend reads it from GET /api/auth/google/config to draw the Google button
+    private final String clientId;
 
     @Autowired
     public GoogleTokenVerifier(@Value("${pro_tube.google.client-id:}") String clientId) {
-        this(clientId.isBlank() ? null : googleDecoder(clientId));
+        this(clientId.isBlank() ? null : googleDecoder(clientId.trim()), clientId.trim());
     }
 
     // Lets tests use a decoder that trusts their own key; null means Google login is disabled
     GoogleTokenVerifier(JwtDecoder decoder) {
+        this(decoder, "");
+    }
+
+    private GoogleTokenVerifier(JwtDecoder decoder, String clientId) {
         this.decoder = decoder;
+        this.clientId = clientId;
+    }
+
+    /**
+     * @return the OAuth client id of "Sign in with Google", empty when Google login is disabled
+     */
+    public String getClientId() {
+        return clientId;
     }
 
     private static JwtDecoder googleDecoder(String clientId) {

@@ -8,15 +8,16 @@ frontend.
 
 * `npm test` starts both apps through `webServer` in `playwright.config.ts`, on their own ports (backend `8081`,
   frontend `5174`) so they never clash with the dev servers:
-  * `scripts/start-backend.mjs` recreates `e2e/.store/` (gitignored) from `fixtures/store/` and runs
-    `mvn spring-boot:run` with the `dev` profile: empty in-memory H2 plus the fixture videos. Every run is a fresh
-    environment.
-  * The frontend runs `npm run dev` with `VITE_API_DOMAIN`/`VITE_MEDIA_DOMAIN` pointing to that backend and the
-    Google button hidden.
+  * `scripts/start-backend.mjs` recreates `e2e/.store/` (gitignored) from `fixtures/store/`, starts an empty
+    PostgreSQL container (`protube_e2e_db`, port `5433`, removed when the run ends; no H2, NFR-01) and runs
+    `mvn spring-boot:run` with the `dev` profile against it, plus the fixture videos. Every run is a fresh
+    environment and never touches the developer's database. Needs Docker running.
+  * The frontend runs `npm run dev` with `VITE_API_DOMAIN`/`VITE_MEDIA_DOMAIN` pointing to that backend; the Google
+    button is hidden because that backend has no Google client id.
 * Outside CI, already running servers on those ports are reused (`reuseExistingServer`); stop them to get a fresh
   database.
-* Ports and Maven command can be changed with `E2E_BACKEND_PORT`, `E2E_FRONTEND_PORT` and `E2E_MAVEN`. URLs are read
-  from `env.ts`, never hardcoded in a spec.
+* Ports and Maven command can be changed with `E2E_BACKEND_PORT`, `E2E_FRONTEND_PORT`, `E2E_DB_PORT` and
+  `E2E_MAVEN`. URLs are read from `env.ts`, never hardcoded in a spec.
 
 ## Writing tests
 

@@ -101,6 +101,7 @@ public class AccountService {
     }
 
     private AuthResponse session(User user) {
-        return new AuthResponse(jwtService.generateToken(user.getUsername()), UserResponse.from(user));
+        return new AuthResponse(jwtService.generateToken(user.getUsername()),
+                jwtService.generateRefreshToken(user.getUsername()), UserResponse.from(user));
     }
 }

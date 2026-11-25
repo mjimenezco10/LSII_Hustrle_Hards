@@ -132,4 +132,11 @@ class GoogleTokenVerifierTest {
         // Google's keys are only downloaded on the first verification, so this needs no network
         new GoogleTokenVerifier(CLIENT_ID);
     }
+
+    @Test
+    void exposesTheConfiguredClientId() {
+        assertEquals("client-id.apps.googleusercontent.com",
+                new GoogleTokenVerifier(" client-id.apps.googleusercontent.com ").getClientId());
+        assertEquals("", new GoogleTokenVerifier("").getClientId());
+    }
 }
