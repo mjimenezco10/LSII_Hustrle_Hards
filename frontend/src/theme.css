@@ -6,13 +6,21 @@
   --pt-text-primary: #f8f9fa;
   --pt-text-secondary: #adb5bd;
 
-  --pt-primary: #e63946;
-  --pt-primary-rgb: 230, 57, 70;
-  --pt-primary-hover: #d62828;
-  --pt-primary-pressed: #b71c1c;
+  /* Brand red of the logo files. Interface elements use the shades below, which reach 4.5:1 (WCAG AA) */
+  --pt-brand: #e63946;
+  /* Fill behind white text (primary buttons, badges): white on it is 4.97:1 */
+  --pt-primary: #d62839;
+  --pt-primary-rgb: 214, 40, 57;
+  --pt-primary-hover: #b71c1c;
+  --pt-primary-pressed: #9b1717;
+  /* Red used as text (links, active states, outline buttons): 5.3:1 on the surface */
+  --pt-primary-text: #ff7a82;
+  --pt-primary-text-rgb: 255, 122, 130;
   --pt-success: #2ec4b6;
   --pt-warning: #ffb703;
   --pt-danger: #dc3545;
+  /* Danger used as text (outline buttons, error messages): 5.3:1 on the surface */
+  --pt-danger-text: #ea868f;
   --pt-info: #4cc9f0;
 
   --pt-font-family: Inter, system-ui, -apple-system, sans-serif;
@@ -37,7 +45,10 @@
   --pt-surface: #ffffff;
   --pt-border: #dee2e6;
   --pt-text-primary: #212529;
-  --pt-text-secondary: #6c757d;
+  --pt-text-secondary: #5c636a;
+  --pt-primary-text: #c8102e;
+  --pt-primary-text-rgb: 200, 16, 46;
+  --pt-danger-text: #b02a37;
   --pt-shadow: 0 12px 32px rgba(33, 37, 41, 0.12);
   --pt-success: #0f766e;
   --pt-info: #0b7a9e;
@@ -56,10 +67,10 @@
   --bs-border-color: var(--pt-border);
   --bs-primary: var(--pt-primary);
   --bs-primary-rgb: var(--pt-primary-rgb);
-  --bs-link-color: var(--pt-primary);
-  --bs-link-color-rgb: var(--pt-primary-rgb);
-  --bs-link-hover-color: var(--pt-primary-hover);
-  --bs-link-hover-color-rgb: 214, 40, 40;
+  --bs-link-color: var(--pt-primary-text);
+  --bs-link-color-rgb: var(--pt-primary-text-rgb);
+  --bs-link-hover-color: var(--pt-primary-text);
+  --bs-link-hover-color-rgb: var(--pt-primary-text-rgb);
   --bs-card-bg: var(--pt-surface);
   --bs-border-radius: var(--pt-radius-md);
   --bs-focus-ring-color: rgba(var(--pt-primary-rgb), 0.35);
@@ -123,6 +134,11 @@ body {
   --bs-btn-disabled-bg: var(--pt-primary);
   --bs-btn-disabled-border-color: var(--pt-primary);
   --bs-btn-focus-shadow-rgb: var(--pt-primary-rgb);
+}
+
+.btn-outline-danger {
+  --bs-btn-color: var(--pt-danger-text);
+  --bs-btn-border-color: var(--pt-danger-text);
 }
 
 .btn-light {

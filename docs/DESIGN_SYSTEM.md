@@ -14,7 +14,8 @@ Bootstrap has no equivalent.
   - `protube-logo.svg`: standalone icon, brand red on a transparent background (login page).
   - `protube-logo-mark.svg`: white monogram on a red 36px square with 8px radius (navbar lockup).
   - `protube-favicon.svg`: thicker strokes (14%) so it stays readable at 32px.
-- **Wordmark:** "ProTube" next to the mark, with "Pro" in the primary text colour and "Tube" in the brand red.
+- **Wordmark:** "ProTube" next to the mark, with "Pro" in the primary text colour and "Tube" in `--pt-primary-text`
+  (the brand red, adjusted to reach 4.5:1 on each theme).
 - **Clear space and size:** keep a free margin of one T-crossbar height around the logo. Minimum 24px for the
   icon and 120px wide for the full lockup.
 - **Personality:** modern, clean and friendly; made by students, finished like a professional product.
@@ -25,7 +26,8 @@ The theme is set with `data-bs-theme` on `<html>`. Users choose Light, Dark or S
 the operating system) from the navbar sun/moon button or Settings → Appearance; the choice is kept in
 `localStorage` (`protube.theme`) by `src/theme/ThemeProvider.tsx`, and an inline script in `index.html` applies it
 before the first paint. Dark is used when the system preference is unknown. The light variant redefines the
-neutral tokens and darkens `--pt-success` and `--pt-info`, which are used as text, so they keep a 4.5:1 contrast.
+neutral tokens and darkens the accents used as text (`--pt-primary-text`, `--pt-danger-text`, `--pt-success`,
+`--pt-info`), so they keep a 4.5:1 contrast.
 
 | Token                 | Dark      | Light     | Use                              |
 | --------------------- | --------- | --------- | -------------------------------- |
@@ -33,22 +35,27 @@ neutral tokens and darkens `--pt-success` and `--pt-info`, which are used as tex
 | `--pt-surface`        | `#2B3035` | `#FFFFFF` | Cards, panels, menus, inputs     |
 | `--pt-border`         | `#343A40` | `#DEE2E6` | Dividers, card and input borders |
 | `--pt-text-primary`   | `#F8F9FA` | `#212529` | Titles and body text             |
-| `--pt-text-secondary` | `#ADB5BD` | `#6C757D` | Metadata, hints, timestamps      |
+| `--pt-text-secondary` | `#ADB5BD` | `#5C636A` | Metadata, hints, timestamps      |
 
-| Token                  | Value     | Use                                                     |
-| ---------------------- | --------- | ------------------------------------------------------- |
-| `--pt-primary`         | `#E63946` | Brand red: primary buttons, links, focus, active states |
-| `--pt-primary-hover`   | `#D62828` | Hover of primary elements                               |
-| `--pt-primary-pressed` | `#B71C1C` | Pressed state                                           |
-| `--pt-success`         | `#2EC4B6` | Validation, success messages (light theme: `#0F766E`)   |
-| `--pt-warning`         | `#FFB703` | Warnings                                                |
-| `--pt-danger`          | `#DC3545` | Errors and destructive actions                          |
-| `--pt-info`            | `#4CC9F0` | Informative labels, hashtags (light theme: `#0B7A9E`)   |
+| Token                  | Value     | Use                                                                   |
+| ---------------------- | --------- | --------------------------------------------------------------------- |
+| `--pt-brand`           | `#E63946` | Brand red of the logo files only                                      |
+| `--pt-primary`         | `#D62839` | Fill behind white text: primary buttons, badges, checked inputs       |
+| `--pt-primary-hover`   | `#B71C1C` | Hover of primary elements                                             |
+| `--pt-primary-pressed` | `#9B1717` | Pressed state                                                         |
+| `--pt-primary-text`    | `#FF7A82` | Red as text: links, active states, outline buttons (light: `#C8102E`) |
+| `--pt-success`         | `#2EC4B6` | Validation, success messages (light theme: `#0F766E`)                 |
+| `--pt-warning`         | `#FFB703` | Warnings                                                              |
+| `--pt-danger`          | `#DC3545` | Errors and destructive actions                                        |
+| `--pt-danger-text`     | `#EA868F` | Danger as text: outline danger buttons (light theme: `#B02A37`)       |
+| `--pt-info`            | `#4CC9F0` | Informative labels, hashtags (light theme: `#0B7A9E`)                 |
 
-`--pt-primary-rgb` (`230, 57, 70`) is there for translucent tints, e.g. `rgba(var(--pt-primary-rgb), 0.12)`.
+`--pt-primary-rgb` (`214, 40, 57`) is there for translucent tints, e.g. `rgba(var(--pt-primary-rgb), 0.12)`.
 
-Any text on a background must reach a contrast ratio of at least 4.5:1 (WCAG 2.1 AA). White text on the brand red
-is only for buttons and badges with bold or large text.
+Any text on a background must reach a contrast ratio of at least 4.5:1 (WCAG 2.1 AA): white on `--pt-primary` is
+4.97:1, but the brand red `#E63946` only reaches 4.17:1, so it is kept for the logo. Never use `--pt-primary` as a
+text colour: use `--pt-primary-text`. The E2E suite checks it on every main page with axe
+(`e2e/tests/accessibility.spec.ts`).
 
 ## Typography
 

@@ -33,6 +33,9 @@ frontend.
 * Reusable steps (search and open a video, check a video plays...) go in `tests/support.ts`.
 * Fixture media lives in `fixtures/`. Videos are **VP9 in MP4** (Playwright's Chromium cannot decode H.264), small
   (a few KB), and the store ones need their `.json` and `.webp` like the video grabber output.
+* Accessibility: `tests/accessibility.spec.ts` runs axe (`@axe-core/playwright`, WCAG 2.1 A and AA rules) on every
+  main page in the light and dark themes. A new page or a new state of a page (a dialog, a form) is added there too.
+  Fix a violation in the frontend (colours through the tokens of `docs/DESIGN_SYSTEM.md`), never by disabling the rule.
 * A test must fail if its flow breaks: check the visible outcome (the new comment is listed, the video's time moves
   forward), not only that a button was clicked.
 

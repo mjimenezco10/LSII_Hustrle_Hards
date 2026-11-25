@@ -30,7 +30,7 @@
 }
 
 .pt-brand-accent {
-  color: var(--pt-primary);
+  color: var(--pt-primary-text);
 }
 
 .pt-login-btn {
@@ -137,7 +137,7 @@
 
 .pt-theme-option[aria-pressed='true'] {
   font-weight: 600;
-  color: var(--pt-primary);
+  color: var(--pt-primary-text);
 }
 
 /* i18n: globe and the current language code (EN, ES, CA) */
@@ -177,7 +177,7 @@
 
 .pt-icon-btn:hover,
 .pt-icon-btn:focus-visible {
-  color: var(--pt-primary);
+  color: var(--pt-primary-text);
   background: rgba(var(--pt-primary-rgb), 0.08);
 }
 

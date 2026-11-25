@@ -36,7 +36,7 @@
 }
 
 .settings-nav a:hover {
-  color: var(--pt-primary);
+  color: var(--pt-primary-text);
   background: rgba(var(--pt-primary-rgb), 0.08);
 }
 
@@ -159,7 +159,7 @@
 }
 
 .settings-segmented label.active {
-  color: var(--pt-primary);
+  color: var(--pt-primary-text);
   background: var(--pt-surface);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }

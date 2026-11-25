@@ -34,7 +34,7 @@ describe('LanguageMenu', () => {
   it('shows the current language in the name of its button', () => {
     renderMenus();
 
-    expect(screen.getByRole('button', { name: 'Language: English' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('button', { name: 'Language: English, EN' })).toHaveAttribute('aria-expanded', 'false');
     expect(screen.getByText('EN')).toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute('lang', 'en');
   });
@@ -43,7 +43,7 @@ describe('LanguageMenu', () => {
     mockBrowserLanguages(['ca-ES']);
     renderMenus();
 
-    expect(screen.getByRole('button', { name: 'Idioma: Català' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Idioma: Català, CA' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Tema: Sistema' })).toBeInTheDocument();
   });
 
@@ -51,14 +51,14 @@ describe('LanguageMenu', () => {
     const user = userEvent.setup();
     renderMenus();
 
-    await user.click(screen.getByRole('button', { name: 'Language: English' }));
+    await user.click(screen.getByRole('button', { name: 'Language: English, EN' }));
     const options = screen.getByRole('group', { name: 'Language' });
     expect(screen.getByRole('button', { name: 'English' })).toHaveAttribute('aria-pressed', 'true');
     expect(options.querySelectorAll('button[lang]')).toHaveLength(3);
     await user.click(screen.getByRole('button', { name: 'Español' }));
 
     expect(screen.queryByRole('group', { name: 'Idioma' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Idioma: Español' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Idioma: Español, ES' })).toHaveFocus();
     expect(screen.getByRole('button', { name: 'Tema: Sistema' })).toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute('lang', 'es');
     expect(localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('es');
@@ -68,13 +68,13 @@ describe('LanguageMenu', () => {
     localStorage.setItem(LANGUAGE_STORAGE_KEY, 'ca');
     renderMenus();
 
-    expect(screen.getByRole('button', { name: 'Idioma: Català' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Idioma: Català, CA' })).toBeInTheDocument();
   });
 
   it('closes with Escape and when clicking outside', async () => {
     const user = userEvent.setup();
     renderMenus();
-    const button = screen.getByRole('button', { name: 'Language: English' });
+    const button = screen.getByRole('button', { name: 'Language: English, EN' });
 
     await user.click(button);
     await user.keyboard('{Escape}');
@@ -94,6 +94,6 @@ describe('LanguageMenu', () => {
       window.dispatchEvent(new StorageEvent('storage', { key: LANGUAGE_STORAGE_KEY }));
     });
 
-    expect(screen.getByRole('button', { name: 'Idioma: Català' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Idioma: Català, CA' })).toBeInTheDocument();
   });
 });

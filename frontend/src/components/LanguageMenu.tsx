@@ -22,8 +22,8 @@ const LanguageMenu = () => {
         ref={button}
         type="button"
         className="pt-icon-btn pt-language-btn"
-        aria-label={t('nav.languageCurrent', { language: current })}
-        title={t('nav.languageCurrent', { language: current })}
+        aria-label={t('nav.languageCurrent', { language: current, code: language.toUpperCase() })}
+        title={t('nav.languageCurrent', { language: current, code: language.toUpperCase() })}
         aria-expanded={open}
         aria-haspopup="true"
         onClick={toggle}
