@@ -147,7 +147,10 @@ npm run lint-fix                          # ESLint with autofix
 npm run format                            # Prettier
 ```
 
-The MVP requires **more than 50% coverage** on both apps.
+The MVP requires **more than 50% coverage** on both apps (NFR-05); the team enforces **at least 90%**, so the build
+fails below it. Backend: JaCoCo in `backend/pom.xml` checks 90% of instructions, lines, branches and methods of the
+whole backend, and 50% of the lines of every class. Frontend: `coverageThreshold` in `frontend/jest.config.ts`
+checks 90% of statements, branches, functions and lines.
 
 ### End-to-end (Playwright)
 

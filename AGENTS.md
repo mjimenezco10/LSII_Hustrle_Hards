@@ -73,7 +73,8 @@ Before opening a PR, run what CI runs (`.github/workflows/main.yml`): frontend `
 ## Definition of Done
 
 * Acceptance criteria of the story in `REQUIREMENT.md` are met.
-* Backend and frontend tests added for the change; coverage stays above 50% on both apps (NFR-05).
+* Backend and frontend tests added for the change; coverage stays at 90% or more on both apps
+  (NFR-05 asks for 50%; the 90% thresholds of `backend/pom.xml` and `frontend/jest.config.ts` fail the build).
 * **E2E tests (NFR-02)**: every new or changed user-facing feature adds or updates its golden path in `e2e/tests/`
   (and its main error case), following [e2e/AGENTS.md](./e2e/AGENTS.md). If a UI change breaks an existing E2E
   test, fix the test in the same PR. The whole suite passes locally and in CI.
