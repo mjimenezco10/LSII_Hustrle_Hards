@@ -6,17 +6,21 @@ client id the app works as usual and the Google button is just hidden.
 ## How it works (1 minute)
 
 ```
-Browser ── Google button (Google Identity Services, uses VITE_GOOGLE_CLIENT_ID) ──► Google
+Browser ── GET /api/auth/google/config ──► Backend { clientId }   (ENV_PROTUBE_GOOGLE_CLIENT_ID)
+   │
+   ├── Google button (Google Identity Services, uses that client id) ──► Google
    │                                            ◄── ID token (JWT signed by Google)
    └── POST /api/auth/google { credential } ──► Backend (GoogleTokenVerifier, uses ENV_PROTUBE_GOOGLE_CLIENT_ID)
                                                  checks signature, issuer, audience = our client id, expiry,
-                                                 verified email → logs in / creates the user → ProTube JWT
+                                                 verified email → logs in / creates the user → ProTube
+                                                 access token + refresh token (renewed automatically)
 ```
 
 * There is **only a client id**, no client secret. The client id is public (it ends up in the frontend bundle), so
   it can be shared in the team chat. It is still kept out of the repo so each one decides whether to enable it.
-* The **same client id** must be set in two places: the backend (`ENV_PROTUBE_GOOGLE_CLIENT_ID`) and the frontend
-  (`VITE_GOOGLE_CLIENT_ID`). If they differ, Google login fails with *Invalid Google credential*.
+* The client id is only set in the **backend** (`ENV_PROTUBE_GOOGLE_CLIENT_ID`); the frontend asks the backend for
+  it. A `VITE_GOOGLE_CLIENT_ID` in the frontend build is still honoured and wins; if it differs from the backend's,
+  Google login fails with *Invalid Google credential*.
 
 ## 1. Get the client id
 
@@ -44,18 +48,11 @@ export ENV_PROTUBE_GOOGLE_CLIENT_ID=<client id>
 The backend reads it through `pro_tube.google.client-id` in `application.properties`. Restart the backend after
 setting it.
 
-## 3. Frontend (dev, `npm run dev`)
+## 3. Frontend
 
-Create `frontend/.env.development.local` (gitignored by `*.local`) with:
-
-```properties
-VITE_GOOGLE_CLIENT_ID=<client id>
-```
-
-Then **restart** `npm run dev`: Vite only reads `.env` files on startup. For a production build (`npm run build:prod`
-or the jar) put the same line in `frontend/.env.production.local`.
-
-Do not put the value in the committed `frontend/.env.development` / `.env.production`.
+Nothing to do: the login page asks the backend (`GET /api/auth/google/config`) for the client id. Optionally a
+`VITE_GOOGLE_CLIENT_ID=<client id>` in `frontend/.env.development.local` / `.env.production.local` (gitignored) is
+baked into the build and used instead. Never put it in the committed `frontend/.env.development` / `.env.production`.
 
 ## 4. Docker (`docker compose up`)
 
@@ -65,12 +62,12 @@ Add the line to the root `.env` (copied from `.env.example`, gitignored):
 ENV_PROTUBE_GOOGLE_CLIENT_ID=<client id>
 ```
 
-`compose.yaml` passes it to the backend container and, as the build arg `VITE_GOOGLE_CLIENT_ID`, to the frontend
-image. The id is baked into the frontend bundle at build time, so rebuild: `docker compose up --build`.
+`compose.yaml` passes it to the backend container; the frontend gets it from the backend, so restarting the backend
+(`docker compose up -d backend`) is enough. The app is on `http://localhost:8080`.
 
 ## 5. Check it works
 
-1. Open the login page (`http://localhost:5173` in dev, `http://localhost` with Docker).
+1. Open the login page (`http://localhost:5173` in dev, `http://localhost:8080` with Docker or the jar).
 2. Below the normal form there is an "or" divider and a **Continue with Google** button.
 3. Pick your Google account → you land logged in. A new ProTube user is created with your Google email the first
    time; if a user with that email already exists, you log in as that user.
@@ -79,8 +76,8 @@ image. The id is baked into the frontend bundle at build time, so rebuild: `dock
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| No Google button | `VITE_GOOGLE_CLIENT_ID` empty in the frontend | Check the `.local` file name and location (`frontend/`), restart `npm run dev` / rebuild Docker |
-| Google popup: *Error 400: origin_mismatch* / *The given origin is not allowed* | The URL you opened is not an authorized JavaScript origin | Use exactly `http://localhost:5173`, `http://localhost` or `http://localhost:8080` (not `127.0.0.1`), or ask the owner to add your origin |
+| No Google button | The backend has no client id, or cannot be reached | Set `ENV_PROTUBE_GOOGLE_CLIENT_ID` and restart the backend; check `GET /api/auth/google/config` answers it |
+| Google popup: *Error 400: origin_mismatch* / *The given origin is not allowed* | The URL you opened is not an authorized JavaScript origin | Use exactly `http://localhost:5173` or `http://localhost:8080` (not `127.0.0.1`), or ask the owner to add your origin |
 | Google popup: *Error 403: access_denied* | Your Google account is not a test user | Ask the owner to add it |
 | *Google login is not available* | Backend has no client id | Set `ENV_PROTUBE_GOOGLE_CLIENT_ID` and restart the backend (and IntelliJ, so it sees the new variable) |
 | *Invalid Google credential* | Backend and frontend have different client ids, or the token expired | Use the same value in both places |

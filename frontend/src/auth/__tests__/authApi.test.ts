@@ -1,5 +1,14 @@
 import axios from 'axios';
-import { fetchCurrentUser, isUnauthorized, login, loginWithGoogle, register, toApiError } from '../authApi';
+import {
+  fetchCurrentUser,
+  fetchGoogleClientId,
+  isUnauthorized,
+  login,
+  loginWithGoogle,
+  refreshSession,
+  register,
+  toApiError,
+} from '../authApi';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -39,6 +48,26 @@ describe('authApi', () => {
 
     await expect(fetchCurrentUser('token')).resolves.toEqual(authResponse.user);
     expect(mockedAxios.get).toHaveBeenCalledWith('other/auth/me', { headers: { Authorization: 'Bearer token' } });
+  });
+
+  it('renews the session with the refresh token', async () => {
+    mockedAxios.post.mockResolvedValueOnce({ data: authResponse });
+
+    await expect(refreshSession('refresh-token')).resolves.toEqual(authResponse);
+    expect(mockedAxios.post).toHaveBeenCalledWith('other/auth/refresh', { refreshToken: 'refresh-token' });
+  });
+
+  it('reads the Google client id from the backend', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: { clientId: 'client-id' } });
+
+    await expect(fetchGoogleClientId()).resolves.toBe('client-id');
+    expect(mockedAxios.get).toHaveBeenCalledWith('other/auth/google/config');
+  });
+
+  it('treats a missing Google client id as disabled', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: {} });
+
+    await expect(fetchGoogleClientId()).resolves.toBe('');
   });
 
   it('detects unauthorized errors', () => {

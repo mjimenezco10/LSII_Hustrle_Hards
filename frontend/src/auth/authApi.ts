@@ -15,7 +15,11 @@ export type User = {
 };
 
 export type AuthResponse = {
+  // Short-lived access token, sent with every request
   token: string;
+  // Long-lived token that renews the session through POST /auth/refresh. Missing in sessions saved before it
+  // existed: those end when their access token expires
+  refreshToken?: string;
   user: User;
 };
 
@@ -43,6 +47,22 @@ export async function login(username: string, password: string): Promise<AuthRes
 export async function loginWithGoogle(credential: string): Promise<AuthResponse> {
   const response = await axios.post<AuthResponse>(`${authUrl()}/google`, { credential });
   return response.data;
+}
+
+/**
+ * Renews the session before its access token expires: answers a new access token and a new refresh token.
+ */
+export async function refreshSession(refreshToken: string): Promise<AuthResponse> {
+  const response = await axios.post<AuthResponse>(`${authUrl()}/refresh`, { refreshToken });
+  return response.data;
+}
+
+/**
+ * Client id of "Sign in with Google" configured in the backend (ENV_PROTUBE_GOOGLE_CLIENT_ID); empty if disabled.
+ */
+export async function fetchGoogleClientId(): Promise<string> {
+  const response = await axios.get<{ clientId?: string }>(`${authUrl()}/google/config`);
+  return response.data?.clientId ?? '';
 }
 
 export async function fetchCurrentUser(token: string): Promise<User> {

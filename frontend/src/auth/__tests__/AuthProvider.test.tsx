@@ -11,6 +11,7 @@ jest.mock('../authApi', () => ({
   register: jest.fn(),
   loginWithGoogle: jest.fn(),
   fetchCurrentUser: jest.fn(),
+  refreshSession: jest.fn(),
 }));
 const mockedApi = authApi as jest.Mocked<typeof authApi>;
 
@@ -174,6 +175,73 @@ describe('AuthProvider', () => {
       jest.advanceTimersByTime(6 * day);
     });
     expect(screen.getByTestId('user')).toHaveTextContent('anonymous');
+  });
+
+  it('renews the session before the access token expires', async () => {
+    jest.useFakeTimers();
+    const renewedToken = tokenExpiringIn(60 * 60_000);
+    mockedApi.refreshSession.mockResolvedValueOnce({ token: renewedToken, refreshToken: 'refresh-2', user });
+    saveSession({ token: tokenExpiringIn(90_000), refreshToken: tokenExpiringIn(60 * 60_000), user });
+    renderWithProvider();
+
+    await act(async () => {
+      jest.advanceTimersByTime(31_000);
+    });
+
+    expect(mockedApi.refreshSession).toHaveBeenCalled();
+    expect(screen.getByTestId('user')).toHaveTextContent('alice');
+    expect(loadSession()?.token).toBe(renewedToken);
+    expect(loadSession()?.refreshToken).toBe('refresh-2');
+    expect(axios.defaults.headers.common.Authorization).toBe(`Bearer ${renewedToken}`);
+  });
+
+  it('restores and renews a stored session whose access token expired but whose refresh token is valid', async () => {
+    const refreshToken = tokenExpiringIn(60 * 60_000);
+    const renewedToken = tokenExpiringIn(60 * 60_000);
+    mockedApi.refreshSession.mockResolvedValueOnce({ token: renewedToken, refreshToken, user });
+    saveSession({ token: tokenExpiringIn(-60_000), refreshToken, user });
+    renderWithProvider();
+
+    expect(screen.getByTestId('user')).toHaveTextContent('alice');
+    await waitFor(() => expect(loadSession()?.token).toBe(renewedToken));
+    expect(mockedApi.refreshSession).toHaveBeenCalledWith(refreshToken);
+  });
+
+  it('ignores a stored session whose refresh token also expired', () => {
+    saveSession({ token: tokenExpiringIn(-60_000), refreshToken: tokenExpiringIn(-1_000), user });
+    renderWithProvider();
+
+    expect(screen.getByTestId('user')).toHaveTextContent('anonymous');
+  });
+
+  it('logs out when the backend rejects the refresh token', async () => {
+    mockedApi.refreshSession.mockRejectedValueOnce({ response: { status: 401 } });
+    saveSession({ token: tokenExpiringIn(-60_000), refreshToken: tokenExpiringIn(60_000), user });
+    renderWithProvider();
+
+    await waitFor(() => expect(screen.getByTestId('user')).toHaveTextContent('anonymous'));
+  });
+
+  it('tries the renewal again when the backend is unreachable', async () => {
+    jest.useFakeTimers();
+    const renewedToken = tokenExpiringIn(60 * 60_000);
+    mockedApi.refreshSession
+      .mockRejectedValueOnce(new Error('Network Error'))
+      .mockResolvedValueOnce({ token: renewedToken, refreshToken: 'refresh-2', user });
+    saveSession({ token: tokenExpiringIn(-60_000), refreshToken: tokenExpiringIn(60 * 60_000), user });
+    renderWithProvider();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId('user')).toHaveTextContent('alice');
+
+    await act(async () => {
+      jest.advanceTimersByTime(31_000);
+    });
+
+    expect(mockedApi.refreshSession).toHaveBeenCalledTimes(2);
+    expect(loadSession()?.token).toBe(renewedToken);
   });
 
   it('fails when used outside the provider', () => {

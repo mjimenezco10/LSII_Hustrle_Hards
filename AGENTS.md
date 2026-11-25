@@ -32,11 +32,17 @@ Before opening a PR, run what CI runs (`.github/workflows/main.yml`): frontend `
 ## Environment
 
 * `ENV_PROTUBE_STORE_DIR`: absolute path of the video store, **ending with a separator** (`/` or `\`). Always needed.
-* `prod` profile uses PostgreSQL: `ENV_PROTUBE_DB_HOST`, `ENV_PROTUBE_DB`, `ENV_PROTUBE_DB_USER`, `ENV_PROTUBE_DB_PASS`.
+* Every profile uses PostgreSQL (NFR-01): `ENV_PROTUBE_DB_HOST`, `ENV_PROTUBE_DB_PORT`, `ENV_PROTUBE_DB`,
+  `ENV_PROTUBE_DB_USER`, `ENV_PROTUBE_DB_PASS`, with defaults (`localhost`, `5432`, `protube`...) matching the `db`
+  service of `compose.yaml` (`docker compose up -d db`).
 * `ENV_PROTUBE_LOAD_INITIAL_DATA` (`prod`, default `false`; `true` in `compose.yaml`): import the video store on
   startup. `dev` always imports it.
-* `dev` profile uses in-memory H2 with initial data: everything is lost on restart. H2 is not allowed in the final
-  delivery (NFR-01).
+* No H2 or in-memory database anywhere (NFR-01): backend tests use a Testcontainers PostgreSQL and the E2E suite a
+  throwaway PostgreSQL container, so both need Docker running.
+* Session: `ENV_PROTUBE_JWT_SECRET` signs the access and refresh tokens; `ENV_PROTUBE_GOOGLE_CLIENT_ID` is only set in
+  the backend (the frontend reads it from `GET /api/auth/google/config`).
+* Ports: Docker app on http://localhost:8080 (nginx + routes to the backend, which is on 8082), prod jar on 8080,
+  dev backend 8080 + Vite 5173, E2E 8081 / 5174 / PostgreSQL 5433.
 * Personal values live outside the repo: root `.env` (Docker, from `.env.example`), user env var
   `ENV_PROTUBE_STORE_DIR` (IntelliJ) and `tooling/videoGrabber/vars_local.py` (videoGrabber paths).
 * Never commit secrets, personal paths or local files: `.mcp.json`, `.env`, `vars_local.py`, `tooling/videoGrabber/vars.py` changes,

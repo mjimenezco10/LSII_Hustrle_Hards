@@ -99,7 +99,8 @@ jobs:
             -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
 
   e2e:
-    # NFR-02: golden paths in a real browser against a fresh backend (dev profile, in-memory H2) and frontend
+    # NFR-02: golden paths in a real browser against a fresh backend (dev profile, throwaway PostgreSQL container
+    # started by e2e/scripts/start-backend.mjs; Docker is available on ubuntu-latest) and frontend
     runs-on: ubuntu-latest
     timeout-minutes: 30
 

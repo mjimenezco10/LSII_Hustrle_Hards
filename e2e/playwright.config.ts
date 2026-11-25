@@ -40,6 +40,8 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       stdout: 'ignore',
       stderr: 'pipe',
+      // SIGTERM instead of the default SIGKILL, so the script can stop Spring Boot and remove its PostgreSQL container
+      gracefulShutdown: { signal: 'SIGTERM', timeout: 15_000 },
     },
     {
       command: `npm run dev -- --port ${FRONTEND_PORT} --strictPort`,
@@ -51,7 +53,7 @@ export default defineConfig({
       env: {
         VITE_API_DOMAIN: BACKEND_URL,
         VITE_MEDIA_DOMAIN: BACKEND_URL,
-        // Hides the "Sign in with Google" button: it needs a real Google account
+        // Hides the "Sign in with Google" button: it needs a real Google account (the backend has none either)
         VITE_GOOGLE_CLIENT_ID: '',
       },
     },

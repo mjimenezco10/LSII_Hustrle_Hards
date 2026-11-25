@@ -4,6 +4,7 @@ import com.tecnocampus.LS2.protube_back.controller.dto.ErrorResponse;
 import com.tecnocampus.LS2.protube_back.services.ChannelNotFoundException;
 import com.tecnocampus.LS2.protube_back.services.CommentNotFoundException;
 import com.tecnocampus.LS2.protube_back.services.InvalidAccountChangeException;
+import com.tecnocampus.LS2.protube_back.services.InvalidRefreshTokenException;
 import com.tecnocampus.LS2.protube_back.services.InvalidCredentialsException;
 import com.tecnocampus.LS2.protube_back.services.InvalidGoogleTokenException;
 import com.tecnocampus.LS2.protube_back.services.InvalidSubscriptionException;
@@ -172,6 +173,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(text(e)));
+    }
+
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRefreshToken(InvalidRefreshTokenException e) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(text(e)));
     }
 

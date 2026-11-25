@@ -34,6 +34,8 @@
         <npm.version>9.2.0</npm.version>
         <frontend-src-dir>${basedir}/../frontend</frontend-src-dir>
         <jjwt.version>0.12.6</jjwt.version>
+        <!-- Newer than the one of Spring Boot 3.3: older Testcontainers cannot talk to Docker Engine 29+ -->
+        <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
     <dependencies>
         <dependency>
@@ -94,10 +96,6 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.7.2</version>
@@ -112,6 +110,12 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- NFR-01: the tests use a throwaway PostgreSQL in Docker instead of H2 (src/test/resources/config) -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

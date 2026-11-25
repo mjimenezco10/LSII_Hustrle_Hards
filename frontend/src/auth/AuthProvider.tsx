@@ -6,10 +6,19 @@ import { clearSession, getTokenExpiration, isTokenExpired, loadSession, saveSess
 
 // Largest delay setTimeout accepts (2^31 - 1 ms)
 const MAX_TIMEOUT_MS = 2_147_483_647;
+// The access token is renewed this long before it expires, so requests never go out with an expired one
+const REFRESH_MARGIN_MS = 60_000;
+// Wait before trying again when the backend could not be reached to renew the session
+const REFRESH_RETRY_MS = 30_000;
+
+// A session can still be used while its access token is valid, or while it can be renewed with its refresh token
+function isUsable(session: Session): boolean {
+  return !isTokenExpired(session.token) || (!!session.refreshToken && !isTokenExpired(session.refreshToken));
+}
 
 function initialSession(): Session | null {
   const stored = loadSession();
-  return stored && !isTokenExpired(stored.token) ? stored : null;
+  return stored && isUsable(stored) ? stored : null;
 }
 
 /**
@@ -18,6 +27,7 @@ function initialSession(): Session | null {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(initialSession);
   const token = session?.token;
+  const refreshToken = session?.refreshToken;
 
   const logout = useCallback(() => setSession(null), []);
 
@@ -46,9 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [session]);
 
-  // Check with the backend that the token is still accepted (e.g. the user may no longer exist)
+  // Check with the backend that the token is still accepted (e.g. the user may no longer exist). An expired access
+  // token is renewed first by the effect below, which checks the user too
   useEffect(() => {
-    if (!token) return;
+    if (!token || isTokenExpired(token)) return;
     let cancelled = false;
     authApi
       .fetchCurrentUser(token)
@@ -64,24 +75,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [token]);
 
-  // Log out automatically as soon as the token expires
+  // Renew the session shortly before the access token expires, so the user stays logged in while the refresh token
+  // is valid. Without a refresh token (or once it is rejected) the user is logged out when the access token expires
   useEffect(() => {
     if (!token) return;
     const expiration = getTokenExpiration(token);
     if (expiration === null) return;
+    let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
-    const schedule = () => {
-      const remaining = expiration - Date.now();
-      if (remaining <= 0) {
+
+    const renew = () => {
+      if (!refreshToken || isTokenExpired(refreshToken)) {
         logout();
+        return;
+      }
+      authApi
+        .refreshSession(refreshToken)
+        .then((next) => {
+          if (!cancelled) setSession(next);
+        })
+        .catch((error: unknown) => {
+          if (cancelled) return;
+          if (authApi.isUnauthorized(error)) logout();
+          // Backend unreachable: try again later
+          else timer = setTimeout(renew, REFRESH_RETRY_MS);
+        });
+    };
+
+    const schedule = () => {
+      const due = refreshToken ? expiration - REFRESH_MARGIN_MS : expiration;
+      const remaining = due - Date.now();
+      if (remaining <= 0) {
+        renew();
         return;
       }
       // setTimeout fires at once for delays above ~24.8 days, so long waits are split into chunks
       timer = setTimeout(schedule, Math.min(remaining, MAX_TIMEOUT_MS));
     };
     schedule();
-    return () => clearTimeout(timer);
-  }, [token, logout]);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [token, refreshToken, logout]);
 
   const value = useMemo<AuthContextValue>(
     () => ({ user: session?.user ?? null, login, register, loginWithGoogle, logout, updateSession }),

@@ -6,7 +6,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
-# Google OAuth client id baked into the bundle (passed by compose.yaml); empty hides the Google button
+# Optional Google OAuth client id baked into the bundle; empty (the default) makes the SPA ask the backend for it
 ARG VITE_GOOGLE_CLIENT_ID=
 ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 # .env.production leaves the API/media domains empty, so the bundle calls /api and /media on its own origin

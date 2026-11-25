@@ -45,4 +45,33 @@ class JwtServiceTest {
 
         assertTrue(jwtService.extractUsername(token).isEmpty());
     }
+
+    @Test
+    void shouldReadUsernameFromRefreshToken() {
+        String refresh = jwtService.generateRefreshToken("alice");
+
+        assertEquals(Optional.of("alice"), jwtService.extractRefreshUsername(refresh));
+    }
+
+    @Test
+    void shouldNotAcceptRefreshTokenAsAccessToken() {
+        String refresh = jwtService.generateRefreshToken("alice");
+
+        assertTrue(jwtService.extractUsername(refresh).isEmpty());
+    }
+
+    @Test
+    void shouldNotAcceptAccessTokenAsRefreshToken() {
+        String access = jwtService.generateToken("alice");
+
+        assertTrue(jwtService.extractRefreshUsername(access).isEmpty());
+    }
+
+    @Test
+    void shouldRejectExpiredRefreshToken() {
+        JwtService alreadyExpired = new JwtService(SECRET, 60, -1);
+        String refresh = alreadyExpired.generateRefreshToken("alice");
+
+        assertTrue(jwtService.extractRefreshUsername(refresh).isEmpty());
+    }
 }

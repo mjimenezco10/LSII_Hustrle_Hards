@@ -50,7 +50,7 @@ public class AuthService {
         }
 
         User user = userRepository.save(new User(username, email, passwordEncoder.encode(request.password())));
-        return new AuthResponse(jwtService.generateToken(user.getUsername()), UserResponse.from(user));
+        return session(user);
     }
 
     /**
@@ -62,7 +62,7 @@ public class AuthService {
                 .filter(u -> passwordEncoder.matches(request.password(), u.getPasswordHash()))
                 .orElseThrow(InvalidCredentialsException::new);
 
-        return new AuthResponse(jwtService.generateToken(user.getUsername()), UserResponse.from(user));
+        return session(user);
     }
 
     /**
@@ -86,7 +86,26 @@ public class AuthService {
                         passwordEncoder.encode(UUID.randomUUID().toString()),
                         account.subject())));
 
-        return new AuthResponse(jwtService.generateToken(user.getUsername()), UserResponse.from(user));
+        return session(user);
+    }
+
+    /**
+     * Renews a session: a valid refresh token gives a new access token and a new refresh token (the refresh token
+     * rotates, so the session lasts while the user comes back before it expires).
+     *
+     * @throws InvalidRefreshTokenException if the token is invalid or expired, or its user no longer exists
+     */
+    @Transactional(readOnly = true)
+    public AuthResponse refresh(String refreshToken) {
+        User user = jwtService.extractRefreshUsername(refreshToken)
+                .flatMap(userRepository::findByUsername)
+                .orElseThrow(InvalidRefreshTokenException::new);
+        return session(user);
+    }
+
+    private AuthResponse session(User user) {
+        return new AuthResponse(jwtService.generateToken(user.getUsername()),
+                jwtService.generateRefreshToken(user.getUsername()), UserResponse.from(user));
     }
 
     private User link(User user, GoogleAccount account) {
@@ -116,6 +135,10 @@ public class AuthService {
             candidate = base + suffix;
         }
         return candidate;
+    }
+
+    public String getGoogleClientId() {
+        return googleTokenVerifier.getClientId();
     }
 
     @Transactional(readOnly = true)

@@ -8,7 +8,13 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 public class IndexController {
 
-    @GetMapping("")
+    /**
+     * Production (jar): the SPA is bundled in static/ and its client-side routes are served by index.html, so
+     * opening or reloading e.g. /login or /videos/3 works. With Docker nginx does the same (try_files).
+     * Keep in sync with the routes of frontend/src/App.tsx.
+     */
+    @GetMapping({"", "/", "/login", "/settings", "/upload", "/analytics", "/favourites", "/subscriptions",
+            "/videos/{id}", "/videos/{id}/edit"})
     public ModelAndView home() {
         return new ModelAndView("index");
     }
