@@ -6,6 +6,8 @@ import AccountSettings from '../AccountSettings';
 import { changeEmail, changePassword, changeUsername, deleteAccount } from '../../account/accountApi';
 import type { User } from '../../auth/authApi';
 import { AuthContext, type AuthContextValue } from '../../auth/authContext';
+import { I18nProvider } from '../../i18n/I18nProvider';
+import { LANGUAGE_STORAGE_KEY } from '../../i18n/languagePreference';
 
 jest.mock('../../account/accountApi', () => ({
   changeUsername: jest.fn(),
@@ -40,19 +42,24 @@ const renderAccount = (user: User) => {
     updateSession,
   };
   render(
-    <AuthContext.Provider value={auth}>
-      <MemoryRouter initialEntries={['/settings']}>
-        <Routes>
-          <Route path="/settings" element={<AccountSettings user={user} />} />
-          <Route path="/" element={<p>Home page</p>} />
-        </Routes>
-      </MemoryRouter>
-    </AuthContext.Provider>
+    <I18nProvider>
+      <AuthContext.Provider value={auth}>
+        <MemoryRouter initialEntries={['/settings']}>
+          <Routes>
+            <Route path="/settings" element={<AccountSettings user={user} />} />
+            <Route path="/" element={<p>Home page</p>} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>
+    </I18nProvider>
   );
 };
 
 describe('AccountSettings', () => {
-  beforeEach(() => jest.resetAllMocks());
+  beforeEach(() => {
+    jest.resetAllMocks();
+    localStorage.clear();
+  });
 
   it('shows the current username and email', () => {
     renderAccount(alice);
@@ -242,5 +249,46 @@ describe('AccountSettings', () => {
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByLabelText('Password')).not.toBeInTheDocument();
+  });
+
+  describe('in another language', () => {
+    it('shows the account section in Catalan', async () => {
+      const user = userEvent.setup();
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, 'ca');
+      renderAccount(alice);
+
+      expect(screen.getByText("Nom d'usuari")).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Canvia el correu electrònic' })).toBeInTheDocument();
+      expect(screen.getByText('Com a mínim 8 caràcters.')).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: 'Canvia la contrasenya' }));
+      expect(screen.getByLabelText('Contrasenya actual')).toBeInTheDocument();
+      expect(screen.getByLabelText('Nova contrasenya')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Desa' })).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Cancel·la' }));
+
+      await user.click(screen.getByRole('button', { name: 'Elimina el compte' }));
+      expect(screen.getByText(/No es pot desfer\./)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Elimina per sempre' })).toBeDisabled();
+    });
+
+    it('shows a Google account in Spanish and the success message of a change', async () => {
+      const user = userEvent.setup();
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, 'es');
+      mockedChangeEmail.mockResolvedValue({ token: 't', user: { ...carol, email: 'new@gmail.com' } });
+      renderAccount(carol);
+
+      expect(screen.getByText('carol@gmail.com · Inicio de sesión con Google activado')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Crear contraseña' })).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: 'Cambiar correo electrónico' }));
+      await user.clear(screen.getByLabelText('Nuevo correo electrónico'));
+      await user.type(screen.getByLabelText('Nuevo correo electrónico'), 'new@gmail.com');
+      await user.click(screen.getByRole('button', { name: 'Guardar' }));
+      expect(await screen.findByRole('status')).toHaveTextContent('Correo electrónico actualizado.');
+
+      await user.click(screen.getByRole('button', { name: 'Eliminar cuenta' }));
+      expect(screen.getByLabelText('Escribe carol para confirmar')).toBeInTheDocument();
+    });
   });
 });

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { changeEmail, changePassword, changeUsername, deleteAccount } from '../account/accountApi';
 import { toApiError, type AuthResponse, type User } from '../auth/authApi';
 import { useAuth } from '../auth/authContext';
+import { useTranslation } from '../i18n/i18nContext';
 
 type Field = { name: string; label: string; type: 'text' | 'email' | 'password'; autoComplete: string };
 
@@ -33,6 +34,7 @@ const AccountRow = ({
   successMessage,
 }: AccountRowProps) => {
   const { updateSession } = useAuth();
+  const { t, language } = useTranslation();
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState<Record<string, string>>(initialValues);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -58,7 +60,7 @@ const AccountRow = ({
       setOpen(false);
       setSaved(true);
     } catch (error) {
-      const apiError = toApiError(error);
+      const apiError = toApiError(error, language);
       // Errors of fields this form does not show (or none) go above the form
       const known = Object.fromEntries(
         Object.entries(apiError.fieldErrors).filter(([name]) => fields.some((field) => field.name === name))
@@ -107,10 +109,10 @@ const AccountRow = ({
           ))}
           <div className="settings-account-actions">
             <button type="button" className="btn btn-light btn-sm" onClick={() => setOpen(false)} disabled={saving}>
-              Cancel
+              {t('account.cancel')}
             </button>
             <button type="submit" className="settings-save btn-sm" disabled={saving}>
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? t('account.saving') : t('account.save')}
             </button>
           </div>
         </form>
@@ -129,6 +131,7 @@ const AccountRow = ({
  */
 const DeleteAccountRow = ({ user, hasPassword }: { user: User; hasPassword: boolean }) => {
   const { logout } = useAuth();
+  const { t, language } = useTranslation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
@@ -145,7 +148,7 @@ const DeleteAccountRow = ({ user, hasPassword }: { user: User; hasPassword: bool
       logout();
       navigate('/', { replace: true });
     } catch (e) {
-      const apiError = toApiError(e);
+      const apiError = toApiError(e, language);
       setError(apiError.fieldErrors[field] ?? apiError.message);
       setDeleting(false);
     }
@@ -154,18 +157,15 @@ const DeleteAccountRow = ({ user, hasPassword }: { user: User; hasPassword: bool
   return (
     <div className="settings-row">
       <div className="settings-row-text">
-        <span id="account-delete-label">Delete account</span>
-        <small>Permanently remove your account and videos.</small>
+        <span id="account-delete-label">{t('account.deleteAccount')}</span>
+        <small>{t('account.deleteAccountHint')}</small>
       </div>
       {open ? (
         <form className="settings-account-form" aria-labelledby="account-delete-label" onSubmit={onSubmit} noValidate>
-          <p className="settings-danger-text mb-0">
-            This deletes your account, your videos with their comments, your comments with their replies, and your
-            ratings, favourites and subscriptions. It cannot be undone.
-          </p>
+          <p className="settings-danger-text mb-0">{t('account.deleteWarning')}</p>
           <div>
             <label htmlFor="account-delete-input" className="form-label">
-              {hasPassword ? 'Password' : `Type ${user.username} to confirm`}
+              {hasPassword ? t('account.password') : t('account.typeToConfirm', { username: user.username })}
             </label>
             <input
               id="account-delete-input"
@@ -180,10 +180,10 @@ const DeleteAccountRow = ({ user, hasPassword }: { user: User; hasPassword: bool
           </div>
           <div className="settings-account-actions">
             <button type="button" className="btn btn-light btn-sm" onClick={() => setOpen(false)} disabled={deleting}>
-              Cancel
+              {t('account.cancel')}
             </button>
             <button type="submit" className="btn btn-danger btn-sm" disabled={deleting || value === ''}>
-              {deleting ? 'Deleting...' : 'Delete permanently'}
+              {deleting ? t('account.deleting') : t('account.deletePermanently')}
             </button>
           </div>
         </form>
@@ -197,7 +197,7 @@ const DeleteAccountRow = ({ user, hasPassword }: { user: User; hasPassword: bool
             setOpen(true);
           }}
         >
-          Delete account
+          {t('account.deleteAccount')}
         </button>
       )}
     </div>
@@ -209,6 +209,7 @@ const DeleteAccountRow = ({ user, hasPassword }: { user: User; hasPassword: bool
  * Google" can change them too; they set their first password without a current one.
  */
 const AccountSettings = ({ user }: { user: User }) => {
+  const { t } = useTranslation();
   // Sessions saved before the field existed have no value: ask for the current password to be safe
   const hasPassword = user.hasPassword !== false;
 
@@ -216,48 +217,44 @@ const AccountSettings = ({ user }: { user: User }) => {
     <>
       <AccountRow
         id="account-username"
-        label="Username"
+        label={t('account.username')}
         hint={user.username}
-        buttonLabel="Change username"
-        fields={[{ name: 'username', label: 'New username', type: 'text', autoComplete: 'username' }]}
+        buttonLabel={t('account.changeUsername')}
+        fields={[{ name: 'username', label: t('account.newUsername'), type: 'text', autoComplete: 'username' }]}
         initialValues={{ username: user.username }}
         submit={(values) => changeUsername(values.username ?? '')}
-        successMessage="Username updated."
+        successMessage={t('account.usernameUpdated')}
       />
       <AccountRow
         id="account-email"
-        label="Email"
-        hint={user.googleLinked ? `${user.email} · Google sign-in enabled` : user.email}
-        buttonLabel="Change email"
-        fields={[{ name: 'email', label: 'New email', type: 'email', autoComplete: 'email' }]}
+        label={t('account.email')}
+        hint={user.googleLinked ? t('account.emailWithGoogle', { email: user.email }) : user.email}
+        buttonLabel={t('account.changeEmail')}
+        fields={[{ name: 'email', label: t('account.newEmail'), type: 'email', autoComplete: 'email' }]}
         initialValues={{ email: user.email }}
         submit={(values) => changeEmail(values.email ?? '')}
-        successMessage="Email updated."
+        successMessage={t('account.emailUpdated')}
       />
       <AccountRow
         id="account-password"
-        label="Password"
-        hint={
-          hasPassword
-            ? 'At least 8 characters.'
-            : 'Your account uses Google sign-in. Set a password to also log in with your username.'
-        }
-        buttonLabel={hasPassword ? 'Change password' : 'Set password'}
+        label={t('account.password')}
+        hint={hasPassword ? t('account.passwordHint') : t('account.googlePasswordHint')}
+        buttonLabel={hasPassword ? t('account.changePassword') : t('account.setPassword')}
         fields={[
           ...(hasPassword
             ? [
                 {
                   name: 'currentPassword',
-                  label: 'Current password',
+                  label: t('account.currentPassword'),
                   type: 'password',
                   autoComplete: 'current-password',
                 } as const,
               ]
             : []),
-          { name: 'newPassword', label: 'New password', type: 'password', autoComplete: 'new-password' },
+          { name: 'newPassword', label: t('account.newPassword'), type: 'password', autoComplete: 'new-password' },
         ]}
         submit={(values) => changePassword(values.newPassword ?? '', hasPassword ? values.currentPassword : undefined)}
-        successMessage={hasPassword ? 'Password changed.' : 'Password set.'}
+        successMessage={hasPassword ? t('account.passwordChanged') : t('account.passwordSet')}
       />
       <DeleteAccountRow user={user} hasPassword={hasPassword} />
     </>
