@@ -1,5 +1,5 @@
 # Full ProTube stack (NFR-03): `docker compose up --build` from the repo root, then open http://localhost:8080
-# (nginx serves the SPA and routes /api and /media to the backend)
+# (nginx serves the SPA, routes /api and /media to the backend and /storage to the S3 bucket)
 # Every variable has a default, so no .env file is needed; override them in a root .env file if required.
 
 services:
@@ -22,12 +22,33 @@ services:
       timeout: 5s
       retries: 10
 
+  # Static storage: S3-compatible object storage (SeaweedFS) for videos, thumbnails and avatars. The browser downloads
+  # them through nginx (/storage/...), so its port is only published for debugging. Not exposed outside Docker, so it
+  # runs without S3 credentials; on AWS set ENV_PROTUBE_S3_* to a real bucket instead
+  s3:
+    image: chrislusf/seaweedfs:4.55
+    container_name: protube_s3
+    restart: unless-stopped
+    command: server -s3 -dir=/data
+    ports:
+      - "${PROTUBE_S3_PORT:-8333}:8333"
+    volumes:
+      - s3_data:/data
+    healthcheck:
+      # 127.0.0.1, not localhost: localhost resolves to IPv6 in the image and SeaweedFS listens on IPv4
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8333/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   backend:
     build: ./backend
     container_name: protube_backend
     restart: unless-stopped
     depends_on:
       db:
+        condition: service_healthy
+      s3:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -36,6 +57,16 @@ services:
       ENV_PROTUBE_STORE_DIR: /data/videos/
       # Import the videos of the store into PostgreSQL on startup (already imported ones are skipped)
       ENV_PROTUBE_LOAD_INITIAL_DATA: ${ENV_PROTUBE_LOAD_INITIAL_DATA:-true}
+      # Static storage (StorageConfig): uploads go to the bucket of the s3 service, and the videos of the store above
+      # are copied to it on startup. ENV_PROTUBE_STORAGE=local keeps everything in the store folder instead
+      ENV_PROTUBE_STORAGE: ${ENV_PROTUBE_STORAGE:-s3}
+      ENV_PROTUBE_S3_ENDPOINT: ${ENV_PROTUBE_S3_ENDPOINT:-http://s3:8333}
+      ENV_PROTUBE_S3_BUCKET: ${ENV_PROTUBE_S3_BUCKET:-protube-media}
+      ENV_PROTUBE_S3_REGION: ${ENV_PROTUBE_S3_REGION:-us-east-1}
+      ENV_PROTUBE_S3_ACCESS_KEY: ${ENV_PROTUBE_S3_ACCESS_KEY:-protube}
+      ENV_PROTUBE_S3_SECRET_KEY: ${ENV_PROTUBE_S3_SECRET_KEY:-protube-secret}
+      # /media/<file> redirects here; nginx proxies /storage/ to the bucket
+      ENV_PROTUBE_S3_PUBLIC_URL: ${ENV_PROTUBE_S3_PUBLIC_URL:-/storage}
       ENV_PROTUBE_DB_HOST: db
       ENV_PROTUBE_DB: ${ENV_PROTUBE_DB:-protube}
       ENV_PROTUBE_DB_USER: ${ENV_PROTUBE_DB_USER:-protube}
@@ -64,8 +95,9 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+      - s3
     ports:
-      # nginx: the SPA plus /api and /media routed to the backend, all on http://localhost:8080
+      # nginx: the SPA plus /api and /media routed to the backend and /storage to the bucket, on http://localhost:8080
       - "${PROTUBE_FRONTEND_PORT:-8080}:8080"
 
   # Code quality (optional): only started with `--profile sonar`, see DEVELOPMENT.md "Code quality (SonarQube)"
@@ -98,6 +130,7 @@ services:
 
 volumes:
   postgres_data:
+  s3_data:
   sonarqube_data:
   sonarqube_extensions:
   sonarqube_logs:

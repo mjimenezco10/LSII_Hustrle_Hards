@@ -1,5 +1,6 @@
 package com.tecnocampus.LS2.protube_back.services;
 
+import com.tecnocampus.LS2.protube_back.storage.LocalMediaStorage;
 import com.tecnocampus.LS2.protube_back.controller.dto.ProfileResponse;
 import com.tecnocampus.LS2.protube_back.controller.dto.UpdateProfileRequest;
 import com.tecnocampus.LS2.protube_back.domain.User;
@@ -49,7 +50,7 @@ class ProfileServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ProfileService(userRepository, videoRepository, store.toString());
+        service = new ProfileService(userRepository, videoRepository, new LocalMediaStorage(store));
         alice = new User("alice", "alice@mail.com", "hash");
         lenient().when(userRepository.findByUsername("alice")).thenReturn(Optional.of(alice));
     }

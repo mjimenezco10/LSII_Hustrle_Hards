@@ -37,6 +37,8 @@ Before opening a PR, run what CI runs (`.github/workflows/main.yml`): frontend `
   service of `compose.yaml` (`docker compose up -d db`).
 * `ENV_PROTUBE_LOAD_INITIAL_DATA` (`prod`, default `false`; `true` in `compose.yaml`): import the video store on
   startup. `dev` always imports it.
+* `ENV_PROTUBE_STORAGE` (`local` by default, `s3` in `compose.yaml`) and `ENV_PROTUBE_S3_*`: static storage of the
+  media files (see DEVELOPMENT.md "Static storage (S3)").
 * No H2 or in-memory database anywhere (NFR-01): backend tests use a Testcontainers PostgreSQL and the E2E suite a
   throwaway PostgreSQL container, so both need Docker running.
 * Session: `ENV_PROTUBE_JWT_SECRET` signs the access and refresh tokens; `ENV_PROTUBE_GOOGLE_CLIENT_ID` is only set in
@@ -52,8 +54,9 @@ Before opening a PR, run what CI runs (`.github/workflows/main.yml`): frontend `
 
 * Backend layering: `controller/` (REST under `/api/**`, DTOs in `controller/dto/`) → `services/` (business logic)
   → `repository/` (Spring Data JPA) with entities in `domain/`. Config in `configuration/`.
-* Media files are served from the store under `/media/**` (`MvcConfig`). Read the store path through
-  `pro_tube.store.dir`, never hardcode it.
+* Media files (videos, thumbnails, avatars) go through `storage/MediaStorage`: `LocalMediaStorage` (the store folder,
+  served under `/media/**` by `MvcConfig`) or `S3MediaStorage` (`ENV_PROTUBE_STORAGE=s3`, `/media/**` redirects to the
+  bucket). Services never write files directly; read the store path through `pro_tube.store.dir`, never hardcode it.
 * Frontend calls the API through `src/utils/Env.ts` (`API_BASE_URL`, `MEDIA_BASE_URL`), never with hardcoded URLs.
 
 ## Conventions

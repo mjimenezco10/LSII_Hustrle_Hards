@@ -1,5 +1,6 @@
 package com.tecnocampus.LS2.protube_back.services;
 
+import com.tecnocampus.LS2.protube_back.storage.LocalMediaStorage;
 import com.tecnocampus.LS2.protube_back.controller.dto.DeleteAccountRequest;
 import com.tecnocampus.LS2.protube_back.domain.User;
 import com.tecnocampus.LS2.protube_back.domain.Video;
@@ -73,7 +74,7 @@ class AccountDeletionServiceTest {
     void setUp() {
         service = new AccountDeletionService(userRepository, videoRepository, commentRepository,
                 commentLikeRepository, ratingRepository, favouriteRepository, subscriptionRepository,
-                videoViewRepository, passwordEncoder, store.toString());
+                videoViewRepository, passwordEncoder, new LocalMediaStorage(store));
         alice = new User("alice", "alice@mail.com", "hash");
         lenient().when(userRepository.findByUsername("alice")).thenReturn(Optional.of(alice));
     }

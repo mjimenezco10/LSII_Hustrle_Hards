@@ -1,5 +1,7 @@
 package com.tecnocampus.LS2.protube_back.services;
 
+import com.tecnocampus.LS2.protube_back.storage.LocalMediaStorage;
+import com.tecnocampus.LS2.protube_back.storage.MediaStorage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tecnocampus.LS2.protube_back.domain.Comment;
 import com.tecnocampus.LS2.protube_back.domain.Video;
@@ -22,6 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -40,7 +45,7 @@ class VideoStoreImporterTest {
 
     @BeforeEach
     void setUp() {
-        importer = new VideoStoreImporter(videoRepository, new ObjectMapper());
+        importer = new VideoStoreImporter(videoRepository, new ObjectMapper(), new LocalMediaStorage(store));
     }
 
     private static String json(String id, String title) {
@@ -240,5 +245,44 @@ class VideoStoreImporterTest {
     void importsNothingWhenTheStoreDoesNotExist() {
         assertEquals(0, importer.importFrom(store.resolve("missing")));
         verify(videoRepository, never()).save(any());
+    }
+
+    @Test
+    void copiesTheFilesOfEveryVideoToTheStorageEvenIfAlreadyImported() throws IOException {
+        MediaStorage storage = mock(MediaStorage.class);
+        VideoStoreImporter toBucket = new VideoStoreImporter(videoRepository, new ObjectMapper(), storage);
+        writeVideo("0", true, true);
+        writeVideo("1", true, true);
+        when(videoRepository.existsByStoreId("0")).thenReturn(true);
+
+        assertEquals(1, toBucket.importFrom(store));
+
+        verify(storage).importFile("0.mp4", store.resolve("0.mp4"));
+        verify(storage).importFile("0.webp", store.resolve("0.webp"));
+        verify(storage).importFile("1.mp4", store.resolve("1.mp4"));
+        verify(storage).importFile("1.webp", store.resolve("1.webp"));
+        verify(videoRepository, times(1)).save(any());
+    }
+
+    @Test
+    void skipsVideosWhoseFilesCannotBeStored() throws IOException {
+        MediaStorage storage = mock(MediaStorage.class);
+        VideoStoreImporter toBucket = new VideoStoreImporter(videoRepository, new ObjectMapper(), storage);
+        writeVideo("0", true, true);
+        doThrow(new IOException("bucket down")).when(storage).importFile(eq("0.mp4"), any());
+
+        assertEquals(0, toBucket.importFrom(store));
+        verify(videoRepository, never()).save(any());
+    }
+
+    @Test
+    void doesNotWarnAboutMissingFilesOfVideosAlreadyImported() throws IOException {
+        MediaStorage storage = mock(MediaStorage.class);
+        VideoStoreImporter toBucket = new VideoStoreImporter(videoRepository, new ObjectMapper(), storage);
+        writeVideo("0", false, true);
+        when(videoRepository.existsByStoreId("0")).thenReturn(true);
+
+        assertEquals(0, toBucket.importFrom(store));
+        verify(storage, never()).importFile(any(), any());
     }
 }
