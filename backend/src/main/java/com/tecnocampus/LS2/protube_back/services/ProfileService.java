@@ -7,9 +7,7 @@ import com.tecnocampus.LS2.protube_back.controller.dto.VideoSummaryResponse;
 import com.tecnocampus.LS2.protube_back.domain.User;
 import com.tecnocampus.LS2.protube_back.repository.UserRepository;
 import com.tecnocampus.LS2.protube_back.repository.VideoRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import com.tecnocampus.LS2.protube_back.storage.MediaStorage;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -19,8 +17,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -32,8 +28,6 @@ import java.util.UUID;
 @Service
 public class ProfileService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ProfileService.class);
-
     // Folder of the video store where avatars are kept; the importer only reads the .json files of the store root
     static final String AVATARS_DIR = "avatars";
     static final Map<String, String> IMAGE_TYPES = Map.of("image/jpeg", "jpg", "image/png", "png", "image/webp", "webp");
@@ -41,13 +35,13 @@ public class ProfileService {
 
     private final UserRepository userRepository;
     private final VideoRepository videoRepository;
-    private final Path storeDir;
+    private final MediaStorage mediaStorage;
 
     public ProfileService(UserRepository userRepository, VideoRepository videoRepository,
-                          @Value("${pro_tube.store.dir}") String storeDir) {
+                          MediaStorage mediaStorage) {
         this.userRepository = userRepository;
         this.videoRepository = videoRepository;
-        this.storeDir = Path.of(storeDir);
+        this.mediaStorage = mediaStorage;
     }
 
     /**
@@ -108,10 +102,8 @@ public class ProfileService {
         User user = find(username);
 
         String avatarFile = AVATARS_DIR + "/" + UUID.randomUUID() + "." + extension;
-        Path avatarPath = storeDir.resolve(avatarFile);
         try {
-            Files.createDirectories(avatarPath.getParent());
-            avatar.transferTo(avatarPath);
+            mediaStorage.save(avatarFile, avatar);
         } catch (IOException e) {
             throw new VideoStorageException(e);
         }
@@ -182,14 +174,8 @@ public class ProfileService {
 
     // An image that cannot be deleted only wastes space
     private void deleteQuietly(String avatarFile) {
-        if (avatarFile == null) {
-            return;
-        }
-        Path path = storeDir.resolve(avatarFile);
-        try {
-            Files.deleteIfExists(path);
-        } catch (IOException e) {
-            LOG.warn("Could not delete the avatar {}", path, e);
+        if (avatarFile != null) {
+            mediaStorage.deleteQuietly(avatarFile);
         }
     }
 }

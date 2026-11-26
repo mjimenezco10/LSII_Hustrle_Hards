@@ -1,5 +1,6 @@
 package com.tecnocampus.LS2.protube_back.services;
 
+import com.tecnocampus.LS2.protube_back.storage.LocalMediaStorage;
 import com.tecnocampus.LS2.protube_back.controller.dto.UploadVideoRequest;
 import com.tecnocampus.LS2.protube_back.controller.dto.VideoDetailResponse;
 import com.tecnocampus.LS2.protube_back.domain.User;
@@ -58,7 +59,7 @@ class VideoUploadServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new VideoUploadService(videoRepository, userRepository, storeDir.toString());
+        service = new VideoUploadService(videoRepository, userRepository, new LocalMediaStorage(storeDir));
     }
 
     private static UploadVideoRequest request(List<String> tags) {

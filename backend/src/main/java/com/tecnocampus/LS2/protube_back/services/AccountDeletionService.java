@@ -11,18 +11,13 @@ import com.tecnocampus.LS2.protube_back.repository.SubscriptionRepository;
 import com.tecnocampus.LS2.protube_back.repository.UserRepository;
 import com.tecnocampus.LS2.protube_back.repository.VideoRepository;
 import com.tecnocampus.LS2.protube_back.repository.VideoViewRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import com.tecnocampus.LS2.protube_back.storage.MediaStorage;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -40,8 +35,6 @@ import java.util.stream.Stream;
 @Service
 public class AccountDeletionService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AccountDeletionService.class);
-
     private final UserRepository userRepository;
     private final VideoRepository videoRepository;
     private final CommentRepository commentRepository;
@@ -51,7 +44,7 @@ public class AccountDeletionService {
     private final SubscriptionRepository subscriptionRepository;
     private final VideoViewRepository videoViewRepository;
     private final PasswordEncoder passwordEncoder;
-    private final Path storeDir;
+    private final MediaStorage mediaStorage;
 
     @SuppressWarnings("java:S107") // One repository per kind of data that belongs to the account
     public AccountDeletionService(UserRepository userRepository, VideoRepository videoRepository,
@@ -59,7 +52,7 @@ public class AccountDeletionService {
                                   RatingRepository ratingRepository, FavouriteRepository favouriteRepository,
                                   SubscriptionRepository subscriptionRepository,
                                   VideoViewRepository videoViewRepository, PasswordEncoder passwordEncoder,
-                                  @Value("${pro_tube.store.dir}") String storeDir) {
+                                  MediaStorage mediaStorage) {
         this.userRepository = userRepository;
         this.videoRepository = videoRepository;
         this.commentRepository = commentRepository;
@@ -69,7 +62,7 @@ public class AccountDeletionService {
         this.subscriptionRepository = subscriptionRepository;
         this.videoViewRepository = videoViewRepository;
         this.passwordEncoder = passwordEncoder;
-        this.storeDir = Path.of(storeDir);
+        this.mediaStorage = mediaStorage;
     }
 
     /**
@@ -98,15 +91,14 @@ public class AccountDeletionService {
         // Removed as entities so their tags go with them; their comments are already deleted
         List<Video> videos = videoRepository.findByUploader(user);
         // US-03: the avatar goes with the videos
-        List<Path> files = Stream.concat(
+        List<String> files = Stream.concat(
                         videos.stream().flatMap(video -> Stream.of(video.getVideoFile(), video.getThumbnailFile())),
                         Stream.ofNullable(user.getAvatarFile()))
-                .map(storeDir::resolve)
                 .toList();
         videoRepository.deleteAll(videos);
         userRepository.delete(user);
 
-        afterCommit(() -> deleteQuietly(files));
+        afterCommit(() -> files.forEach(mediaStorage::deleteQuietly));
     }
 
     private void checkConfirmation(User user, DeleteAccountRequest request) {
@@ -138,17 +130,6 @@ public class AccountDeletionService {
             });
         } else {
             action.run();
-        }
-    }
-
-    // A file that cannot be deleted only wastes space: the account is gone anyway
-    private static void deleteQuietly(List<Path> files) {
-        for (Path file : files) {
-            try {
-                Files.deleteIfExists(file);
-            } catch (IOException e) {
-                LOG.warn("Could not delete {} of a deleted account", file, e);
-            }
         }
     }
 }

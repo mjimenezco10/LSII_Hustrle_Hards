@@ -6,29 +6,23 @@ import com.tecnocampus.LS2.protube_back.domain.User;
 import com.tecnocampus.LS2.protube_back.domain.Video;
 import com.tecnocampus.LS2.protube_back.repository.UserRepository;
 import com.tecnocampus.LS2.protube_back.repository.VideoRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import com.tecnocampus.LS2.protube_back.storage.MediaStorage;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * US-06: stores an uploaded video and its thumbnail in the video store and adds the video to the catalog.
+ * US-06: stores an uploaded video and its thumbnail in the media storage and adds the video to the catalog.
  * Either everything is saved or nothing is: if any step fails, the files already written are deleted.
  */
 @Service
 public class VideoUploadService {
-
-    private static final Logger LOG = LoggerFactory.getLogger(VideoUploadService.class);
 
     // Formats every browser can play with the <video> tag, by content type -> file extension
     static final Map<String, String> VIDEO_TYPES = Map.of("video/mp4", "mp4", "video/webm", "webm");
@@ -38,13 +32,13 @@ public class VideoUploadService {
 
     private final VideoRepository videoRepository;
     private final UserRepository userRepository;
-    private final Path storeDir;
+    private final MediaStorage mediaStorage;
 
     public VideoUploadService(VideoRepository videoRepository, UserRepository userRepository,
-                              @Value("${pro_tube.store.dir}") String storeDir) {
+                              MediaStorage mediaStorage) {
         this.videoRepository = videoRepository;
         this.userRepository = userRepository;
-        this.storeDir = Path.of(storeDir);
+        this.mediaStorage = mediaStorage;
     }
 
     /**
@@ -68,16 +62,15 @@ public class VideoUploadService {
         User uploader = userRepository.findByUsername(username).orElseThrow(InvalidCredentialsException::new);
 
         String storeId = "upload-" + UUID.randomUUID();
-        Path videoPath = storeDir.resolve(storeId + "." + videoExtension);
-        Path thumbnailPath = storeDir.resolve(storeId + "-thumbnail." + thumbnailExtension);
+        String videoKey = storeId + "." + videoExtension;
+        String thumbnailKey = storeId + "-thumbnail." + thumbnailExtension;
         try {
-            Files.createDirectories(storeDir);
-            videoFile.transferTo(videoPath);
-            thumbnailFile.transferTo(thumbnailPath);
+            mediaStorage.save(videoKey, videoFile);
+            mediaStorage.save(thumbnailKey, thumbnailFile);
 
             Video video = new Video(storeId, request.title().trim(), blankToNull(request.description()),
                     uploader.getUsername(), request.durationSeconds(), request.width(), request.height(),
-                    Instant.now(), videoPath.getFileName().toString(), thumbnailPath.getFileName().toString());
+                    Instant.now(), videoKey, thumbnailKey);
             video.setTags(VideoTags.normalize(request.tags()));
             video.setCategory(request.category());
             video.setAgeRestricted(request.ageRestricted());
@@ -85,10 +78,10 @@ public class VideoUploadService {
             // saveAndFlush so a database error happens here, while the files can still be deleted
             return VideoDetailResponse.from(videoRepository.saveAndFlush(video));
         } catch (IOException e) {
-            deleteQuietly(videoPath, thumbnailPath);
+            deleteQuietly(videoKey, thumbnailKey);
             throw new VideoStorageException(e);
         } catch (RuntimeException e) {
-            deleteQuietly(videoPath, thumbnailPath);
+            deleteQuietly(videoKey, thumbnailKey);
             throw e;
         }
     }
@@ -111,13 +104,9 @@ public class VideoUploadService {
         return text == null || text.isBlank() ? null : text.strip();
     }
 
-    private static void deleteQuietly(Path... paths) {
-        for (Path path : paths) {
-            try {
-                Files.deleteIfExists(path);
-            } catch (IOException e) {
-                LOG.warn("Could not delete {} after a failed upload", path, e);
-            }
+    private void deleteQuietly(String... keys) {
+        for (String key : keys) {
+            mediaStorage.deleteQuietly(key);
         }
     }
 }

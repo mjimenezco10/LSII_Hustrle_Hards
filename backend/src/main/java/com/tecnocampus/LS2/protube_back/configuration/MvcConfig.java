@@ -1,6 +1,7 @@
 package com.tecnocampus.LS2.protube_back.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tecnocampus.LS2.protube_back.storage.StorageConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,10 +34,13 @@ public class MvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry
-           .addResourceHandler("/media/**")
-           .addResourceLocations(
-                   String.format("file:%s", env.getProperty("pro_tube.store.dir")));
+        // With the S3 storage MediaRedirectController sends /media/** to the bucket instead
+        if (!"s3".equals(env.getProperty(StorageConfig.TYPE_PROPERTY))) {
+            registry
+               .addResourceHandler("/media/**")
+               .addResourceLocations(
+                       String.format("file:%s", env.getProperty("pro_tube.store.dir")));
+        }
 
         registry.addResourceHandler("/**")
            .addResourceLocations("classpath:/static/", "classpath:/public/",

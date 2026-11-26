@@ -53,6 +53,8 @@ python3 main.py --store=/absolute/path/to/videos --id=10 --videos=../../resource
 | `ENV_PROTUBE_DB_USER`              | `prod` profile          | Database user                                                                                    |
 | `ENV_PROTUBE_DB_PASS`              | `prod` profile          | Database password                                                                                |
 | `ENV_PROTUBE_LOAD_INITIAL_DATA`    | `prod` profile, optional | `true` imports the video store into the database on startup (default `false`; `dev` always imports) |
+| `ENV_PROTUBE_STORAGE`              | optional                | Where uploaded videos, thumbnails and avatars are kept: `local` (default, the store folder) or `s3` (a bucket, see [Static storage (S3)](#static-storage-s3)) |
+| `ENV_PROTUBE_S3_*`                 | `ENV_PROTUBE_STORAGE=s3` | `ENDPOINT` (empty for AWS), `BUCKET` (`protube-media`), `REGION` (`us-east-1`), `ACCESS_KEY` / `SECRET_KEY` (empty: default AWS credentials), `PUBLIC_URL` (`/storage`) |
 
 Never commit real secrets or personal paths. The shared run configurations in `.run/` do **not** set
 `ENV_PROTUBE_STORE_DIR`: set it once as a user environment variable on your machine and restart IntelliJ.
@@ -268,9 +270,10 @@ To only preview the production frontend bundle, without the backend: `cd fronten
 
 ### Run with Docker Compose (delivery, NFR-03)
 
-The delivered application runs as three containers defined in [`compose.yaml`](./compose.yaml): `db`
-(PostgreSQL 16), `backend` (Spring Boot, Spring `prod` profile) and `frontend` (nginx serving the built SPA and
-proxying `/api` and `/media` to the backend). Only Docker is needed:
+The delivered application runs as four containers defined in [`compose.yaml`](./compose.yaml): `db`
+(PostgreSQL 16), `s3` (SeaweedFS, S3-compatible static storage for the media files), `backend` (Spring Boot, Spring
+`prod` profile) and `frontend` (nginx serving the built SPA, proxying `/api` and `/media` to the backend and
+`/storage` to the bucket). Only Docker is needed:
 
 ```bash
 docker compose up --build
@@ -291,6 +294,24 @@ else), copy [`.env.example`](./.env.example) to `.env` in the repo root (it is g
 Database data lives in the `postgres_data` volume and survives `docker compose down`; use `docker compose down -v`
 to wipe it. If `PROTUBE_STORE_DIR` is empty the app still starts, but there are no videos to serve — generate them
 with the video grabber (section 1).
+
+### Static storage (S3)
+
+With `ENV_PROTUBE_STORAGE=s3` (the default in `compose.yaml`) videos, thumbnails and avatars live in an S3 bucket
+instead of the store folder (`storage/` package, `StorageConfig`):
+
+* Uploads (US-06, avatars of US-03) are written to the bucket and deleted from it with the account.
+* On startup (`ENV_PROTUBE_LOAD_INITIAL_DATA=true`) the videos of the store folder are copied to the bucket if they
+  are not there yet, so a new bucket gets the videoGrabber videos.
+* The API keeps returning `/media/<file>` URLs; the backend answers them with a redirect to
+  `ENV_PROTUBE_S3_PUBLIC_URL/<file>`, so the browser downloads the files from the storage and not through Spring.
+  In Docker nginx proxies `/storage/` to the public bucket (read-only, with range requests for seeking).
+* The backend creates the bucket with public read access if it does not exist.
+
+`compose.yaml` uses [SeaweedFS](https://github.com/seaweedfs/seaweedfs) (the MinIO images are no longer published on
+Docker Hub); its data lives in the `s3_data` volume. For AWS, leave `ENV_PROTUBE_S3_ENDPOINT` empty and set the
+bucket, region, keys and public URL (e.g. `https://<bucket>.s3.<region>.amazonaws.com`). Outside Docker the default
+`local` keeps working as before. The backend tests of the S3 storage start a throwaway SeaweedFS with Testcontainers.
 
 ### Using PostgreSQL
 
