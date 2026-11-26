@@ -58,6 +58,11 @@ Before opening a PR, run what CI runs (`.github/workflows/main.yml`): frontend `
   served under `/media/**` by `MvcConfig`) or `S3MediaStorage` (`ENV_PROTUBE_STORAGE=s3`, `/media/**` redirects to the
   bucket). Services never write files directly; read the store path through `pro_tube.store.dir`, never hardcode it.
 * Frontend calls the API through `src/utils/Env.ts` (`API_BASE_URL`, `MEDIA_BASE_URL`), never with hardcoded URLs.
+* Design patterns and other architecture decisions are recorded as ADRs in [docs/adr/](./docs/adr/README.md):
+  Strategy (`MediaStorage`), static factories (`*Response.from`), Observer (`MediaCleanupEvent`). A new pattern or
+  a change to one of them gets a new ADR in the same PR.
+* Files that become unused in a transaction are not deleted directly: publish a `MediaCleanupEvent` and
+  `MediaCleanupListener` deletes them after the commit (or the new ones after a rollback).
 
 ## Conventions
 

@@ -11,12 +11,11 @@ import com.tecnocampus.LS2.protube_back.repository.SubscriptionRepository;
 import com.tecnocampus.LS2.protube_back.repository.UserRepository;
 import com.tecnocampus.LS2.protube_back.repository.VideoRepository;
 import com.tecnocampus.LS2.protube_back.repository.VideoViewRepository;
-import com.tecnocampus.LS2.protube_back.storage.MediaStorage;
+import com.tecnocampus.LS2.protube_back.storage.MediaCleanupEvent;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -44,7 +43,7 @@ public class AccountDeletionService {
     private final SubscriptionRepository subscriptionRepository;
     private final VideoViewRepository videoViewRepository;
     private final PasswordEncoder passwordEncoder;
-    private final MediaStorage mediaStorage;
+    private final ApplicationEventPublisher events;
 
     @SuppressWarnings("java:S107") // One repository per kind of data that belongs to the account
     public AccountDeletionService(UserRepository userRepository, VideoRepository videoRepository,
@@ -52,7 +51,7 @@ public class AccountDeletionService {
                                   RatingRepository ratingRepository, FavouriteRepository favouriteRepository,
                                   SubscriptionRepository subscriptionRepository,
                                   VideoViewRepository videoViewRepository, PasswordEncoder passwordEncoder,
-                                  MediaStorage mediaStorage) {
+                                  ApplicationEventPublisher events) {
         this.userRepository = userRepository;
         this.videoRepository = videoRepository;
         this.commentRepository = commentRepository;
@@ -62,7 +61,7 @@ public class AccountDeletionService {
         this.subscriptionRepository = subscriptionRepository;
         this.videoViewRepository = videoViewRepository;
         this.passwordEncoder = passwordEncoder;
-        this.mediaStorage = mediaStorage;
+        this.events = events;
     }
 
     /**
@@ -98,7 +97,8 @@ public class AccountDeletionService {
         videoRepository.deleteAll(videos);
         userRepository.delete(user);
 
-        afterCommit(() -> files.forEach(mediaStorage::deleteQuietly));
+        // Deleted after the commit: a rollback must still find the files of the videos it brings back
+        events.publishEvent(MediaCleanupEvent.onCommit(files));
     }
 
     private void checkConfirmation(User user, DeleteAccountRequest request) {
@@ -116,20 +116,6 @@ public class AccountDeletionService {
             // Google accounts without a password confirm by typing their username
             throw new InvalidAccountChangeException("confirmation", "error.account.confirmUsername",
                     "Type your username to confirm");
-        }
-    }
-
-    // Outside a transaction (unit tests) the action runs at once
-    private static void afterCommit(Runnable action) {
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    action.run();
-                }
-            });
-        } else {
-            action.run();
         }
     }
 }

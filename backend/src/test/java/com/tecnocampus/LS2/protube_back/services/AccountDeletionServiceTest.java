@@ -1,6 +1,8 @@
 package com.tecnocampus.LS2.protube_back.services;
 
 import com.tecnocampus.LS2.protube_back.storage.LocalMediaStorage;
+import com.tecnocampus.LS2.protube_back.storage.MediaCleanupEvent;
+import com.tecnocampus.LS2.protube_back.storage.MediaCleanupListener;
 import com.tecnocampus.LS2.protube_back.controller.dto.DeleteAccountRequest;
 import com.tecnocampus.LS2.protube_back.domain.User;
 import com.tecnocampus.LS2.protube_back.domain.Video;
@@ -20,13 +22,12 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -69,12 +70,19 @@ class AccountDeletionServiceTest {
 
     AccountDeletionService service;
     User alice;
+    // Events published by the service; outside a transaction the listener treats them as committed at once
+    List<MediaCleanupEvent> events;
 
     @BeforeEach
     void setUp() {
+        MediaCleanupListener listener = new MediaCleanupListener(new LocalMediaStorage(store));
+        events = new ArrayList<>();
         service = new AccountDeletionService(userRepository, videoRepository, commentRepository,
                 commentLikeRepository, ratingRepository, favouriteRepository, subscriptionRepository,
-                videoViewRepository, passwordEncoder, new LocalMediaStorage(store));
+                videoViewRepository, passwordEncoder, event -> {
+                    events.add((MediaCleanupEvent) event);
+                    listener.onCommit((MediaCleanupEvent) event);
+                });
         alice = new User("alice", "alice@mail.com", "hash");
         lenient().when(userRepository.findByUsername("alice")).thenReturn(Optional.of(alice));
     }
@@ -128,23 +136,16 @@ class AccountDeletionServiceTest {
     }
 
     @Test
-    void insideATransactionTheFilesAreDeletedOnlyAfterTheCommit() throws IOException {
+    void asksToDeleteTheFilesOnlyOnCommit() throws IOException {
         Video video = uploadedVideo();
         when(passwordEncoder.matches("password123", "hash")).thenReturn(true);
         when(videoRepository.findByUploader(alice)).thenReturn(List.of(video));
-        TransactionSynchronizationManager.initSynchronization();
-        try {
-            service.deleteAccount("alice", new DeleteAccountRequest("password123", null));
 
-            // A rollback must still find the files of the videos it brings back
-            assertTrue(Files.exists(store.resolve("upload-1.mp4")));
+        service.deleteAccount("alice", new DeleteAccountRequest("password123", null));
 
-            TransactionSynchronizationManager.getSynchronizations().forEach(TransactionSynchronization::afterCommit);
-            assertFalse(Files.exists(store.resolve("upload-1.mp4")));
-            assertFalse(Files.exists(store.resolve("upload-1-thumbnail.webp")));
-        } finally {
-            TransactionSynchronizationManager.clearSynchronization();
-        }
+        // A rollback must still find the files of the videos it brings back
+        assertEquals(MediaCleanupEvent.onCommit(List.of("upload-1.mp4", "upload-1-thumbnail.webp")), events.get(0));
+        assertEquals(List.of(), events.get(0).deleteOnRollback());
     }
 
     @Test

@@ -1,12 +1,13 @@
 package com.tecnocampus.LS2.protube_back.services;
 
 import com.tecnocampus.LS2.protube_back.storage.LocalMediaStorage;
+import com.tecnocampus.LS2.protube_back.storage.MediaCleanupEvent;
+import com.tecnocampus.LS2.protube_back.storage.MediaCleanupListener;
 import com.tecnocampus.LS2.protube_back.controller.dto.ProfileResponse;
 import com.tecnocampus.LS2.protube_back.controller.dto.UpdateProfileRequest;
 import com.tecnocampus.LS2.protube_back.domain.User;
 import com.tecnocampus.LS2.protube_back.repository.UserRepository;
 import com.tecnocampus.LS2.protube_back.repository.VideoRepository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,13 +15,13 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,23 +48,28 @@ class ProfileServiceTest {
 
     ProfileService service;
     User alice;
+    // Events published by the service; outside a transaction the listener treats them as committed at once
+    List<MediaCleanupEvent> events;
 
     @BeforeEach
     void setUp() {
-        service = new ProfileService(userRepository, videoRepository, new LocalMediaStorage(store));
+        LocalMediaStorage storage = new LocalMediaStorage(store);
+        MediaCleanupListener listener = new MediaCleanupListener(storage);
+        events = new ArrayList<>();
+        service = new ProfileService(userRepository, videoRepository, storage, event -> {
+            events.add((MediaCleanupEvent) event);
+            listener.onCommit((MediaCleanupEvent) event);
+        });
         alice = new User("alice", "alice@mail.com", "hash");
         lenient().when(userRepository.findByUsername("alice")).thenReturn(Optional.of(alice));
     }
 
-    @AfterEach
-    void clearTransaction() {
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.clearSynchronization();
-        }
-    }
-
     private static MockMultipartFile image(String type, int bytes) {
         return new MockMultipartFile("avatar", "me", type, new byte[bytes]);
+    }
+
+    private static String keyOf(ProfileResponse profile) {
+        return profile.avatarUrl().substring("/media/".length());
     }
 
     private Path avatarPath(ProfileResponse profile) {
@@ -135,30 +141,19 @@ class ProfileServiceTest {
     }
 
     @Test
-    void insideATransactionTheOldAvatarIsDeletedOnlyAfterTheCommit() {
-        Path oldPath = avatarPath(service.updateAvatar("alice", image("image/jpeg", 10)));
-        TransactionSynchronizationManager.initSynchronization();
+    void replacingTheAvatarAsksToDeleteTheOldOneOnCommitAndTheNewOneOnRollback() {
+        String oldFile = keyOf(service.updateAvatar("alice", image("image/jpeg", 10)));
 
-        ProfileResponse profile = service.updateAvatar("alice", image("image/jpeg", 10));
-        assertTrue(Files.exists(oldPath));
-        TransactionSynchronizationManager.getSynchronizations()
-                .forEach(sync -> sync.afterCompletion(TransactionSynchronization.STATUS_COMMITTED));
+        String newFile = keyOf(service.updateAvatar("alice", image("image/jpeg", 10)));
 
-        assertFalse(Files.exists(oldPath));
-        assertTrue(Files.exists(avatarPath(profile)));
+        assertEquals(new MediaCleanupEvent(List.of(oldFile), List.of(newFile)), events.get(1));
     }
 
     @Test
-    void aRollbackDeletesTheNewAvatarAndKeepsTheOldOne() {
-        Path oldPath = avatarPath(service.updateAvatar("alice", image("image/jpeg", 10)));
-        TransactionSynchronizationManager.initSynchronization();
+    void theFirstAvatarHasNoOldFileToDelete() {
+        String newFile = keyOf(service.updateAvatar("alice", image("image/jpeg", 10)));
 
-        Path newPath = avatarPath(service.updateAvatar("alice", image("image/jpeg", 10)));
-        TransactionSynchronizationManager.getSynchronizations()
-                .forEach(sync -> sync.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
-
-        assertTrue(Files.exists(oldPath));
-        assertFalse(Files.exists(newPath));
+        assertEquals(new MediaCleanupEvent(List.of(), List.of(newFile)), events.get(0));
     }
 
     @Test
