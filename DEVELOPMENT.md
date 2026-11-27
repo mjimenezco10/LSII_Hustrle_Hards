@@ -55,6 +55,9 @@ python3 main.py --store=/absolute/path/to/videos --id=10 --videos=../../resource
 | `ENV_PROTUBE_LOAD_INITIAL_DATA`    | `prod` profile, optional | `true` imports the video store into the database on startup (default `false`; `dev` always imports) |
 | `ENV_PROTUBE_STORAGE`              | optional                | Where uploaded videos, thumbnails and avatars are kept: `local` (default, the store folder) or `s3` (a bucket, see [Static storage (S3)](#static-storage-s3)) |
 | `ENV_PROTUBE_S3_*`                 | `ENV_PROTUBE_STORAGE=s3` | `ENDPOINT` (empty for AWS), `BUCKET` (`protube-media`), `REGION` (`us-east-1`), `ACCESS_KEY` / `SECRET_KEY` (empty: default AWS credentials), `PUBLIC_URL` (`/storage`) |
+| `ENV_PROTUBE_CACHE`                | optional                | Cache of the video list and search pages: `none` (default) or `redis` (see [Cache (Redis)](#cache-redis)) |
+| `ENV_PROTUBE_REDIS_*`              | `ENV_PROTUBE_CACHE=redis` | `HOST` (`localhost`), `PORT` (`6379`), `PASSWORD` (empty: no password) |
+| `ENV_PROTUBE_CACHE_TTL_MINUTES`    | optional                | Minutes a cached page lasts (default `10`) |
 
 Never commit real secrets or personal paths. The shared run configurations in `.run/` do **not** set
 `ENV_PROTUBE_STORE_DIR`: set it once as a user environment variable on your machine and restart IntelliJ.
@@ -270,8 +273,9 @@ To only preview the production frontend bundle, without the backend: `cd fronten
 
 ### Run with Docker Compose (delivery, NFR-03)
 
-The delivered application runs as four containers defined in [`compose.yaml`](./compose.yaml): `db`
-(PostgreSQL 16), `s3` (SeaweedFS, S3-compatible static storage for the media files), `backend` (Spring Boot, Spring
+The delivered application runs as five containers defined in [`compose.yaml`](./compose.yaml): `db`
+(PostgreSQL 16), `s3` (SeaweedFS, S3-compatible static storage for the media files), `redis` (cache of the video
+list and search pages), `backend` (Spring Boot, Spring
 `prod` profile) and `frontend` (nginx serving the built SPA, proxying `/api` and `/media` to the backend and
 `/storage` to the bucket). Only Docker is needed:
 
@@ -312,6 +316,25 @@ instead of the store folder (`storage/` package, `StorageConfig`):
 Docker Hub); its data lives in the `s3_data` volume. For AWS, leave `ENV_PROTUBE_S3_ENDPOINT` empty and set the
 bucket, region, keys and public URL (e.g. `https://<bucket>.s3.<region>.amazonaws.com`). Outside Docker the default
 `local` keeps working as before. The backend tests of the S3 storage start a throwaway SeaweedFS with Testcontainers.
+
+### Cache (Redis)
+
+With `ENV_PROTUBE_CACHE=redis` (the default in `compose.yaml`) the pages of `GET /api/videos`, the home list and the
+search results, are kept in Redis (`CacheConfig`, cache `videoPages` in `VideoService`):
+
+* The key is the page, the size and the trimmed search text, e.g. `protube:videoPages::0:12:beach`; a blank search
+  shares the key of the list. The value is the JSON of the page, so it can be read with `redis-cli`
+  (`docker compose exec redis redis-cli keys 'protube:*'`).
+* Every change to the videos shown in a page removes all the cached pages, after its transaction is committed:
+  uploading (US-06), editing (US-07), renaming the uploader and deleting the account. They are also removed on startup,
+  because Redis keeps them while the backend restarts. Views, ratings and comments do not appear in the list, so they
+  do not touch the cache.
+* Pages expire after `ENV_PROTUBE_CACHE_TTL_MINUTES` (10) anyway, and the `redis` service holds at most 64 MB
+  (least recently used pages go first, nothing is written to disk).
+* The cache is optional: if Redis is down, the error is logged and the request reads PostgreSQL as without cache.
+
+Outside Docker the default `none` caches nothing. To try it locally: `docker compose up -d db redis` and start the
+backend with `ENV_PROTUBE_CACHE=redis`. The backend tests of the cache start a throwaway Redis with Testcontainers.
 
 ### Using PostgreSQL
 

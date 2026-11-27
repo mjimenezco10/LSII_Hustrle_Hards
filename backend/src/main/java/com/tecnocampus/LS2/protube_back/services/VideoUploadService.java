@@ -7,6 +7,7 @@ import com.tecnocampus.LS2.protube_back.domain.Video;
 import com.tecnocampus.LS2.protube_back.repository.UserRepository;
 import com.tecnocampus.LS2.protube_back.repository.VideoRepository;
 import com.tecnocampus.LS2.protube_back.storage.MediaStorage;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -49,6 +50,7 @@ public class VideoUploadService {
      * @throws VideoStorageException      if the files cannot be written to the store
      */
     @Transactional
+    @CacheEvict(cacheNames = VideoService.VIDEO_PAGES_CACHE, allEntries = true)
     public VideoDetailResponse upload(String username, UploadVideoRequest request, MultipartFile videoFile,
                                       MultipartFile thumbnailFile) {
         String videoExtension = extensionOf(videoFile, VIDEO_TYPES, "video",

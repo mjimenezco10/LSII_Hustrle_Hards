@@ -10,6 +10,7 @@ import com.tecnocampus.LS2.protube_back.repository.CommentRepository;
 import com.tecnocampus.LS2.protube_back.repository.SubscriptionRepository;
 import com.tecnocampus.LS2.protube_back.repository.UserRepository;
 import com.tecnocampus.LS2.protube_back.repository.VideoRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +44,7 @@ public class AccountService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = VideoService.VIDEO_PAGES_CACHE, allEntries = true)
     public AuthResponse changeUsername(String currentUsername, ChangeUsernameRequest request) {
         User user = find(currentUsername);
         String username = request.username().trim();
