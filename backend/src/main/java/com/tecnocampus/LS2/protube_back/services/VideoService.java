@@ -7,6 +7,8 @@ import com.tecnocampus.LS2.protube_back.controller.dto.VideoSummaryResponse;
 import com.tecnocampus.LS2.protube_back.domain.Video;
 import com.tecnocampus.LS2.protube_back.repository.CommentLikeRepository;
 import com.tecnocampus.LS2.protube_back.repository.VideoRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,12 @@ import java.util.Set;
 
 @Service
 public class VideoService {
+
+    /**
+     * Pages of GET /api/videos (list and search results), see CacheConfig. Every change to the videos shown in a page
+     * (upload, edit, author rename, deletion) removes all of them.
+     */
+    public static final String VIDEO_PAGES_CACHE = "videoPages";
 
     // Newest first; the id breaks ties so pages never repeat or skip videos with the same date
     static final Sort NEWEST_FIRST = Sort.by(Sort.Order.desc("publishedAt"), Sort.Order.desc("id"));
@@ -57,6 +65,7 @@ public class VideoService {
      * @throws VideoAccessDeniedException if {@code username} is not the owner
      */
     @Transactional
+    @CacheEvict(cacheNames = VIDEO_PAGES_CACHE, allEntries = true)
     public VideoDetailResponse updateVideo(Long id, String username, UpdateVideoRequest request) {
         Video video = videoRepository.findById(id).orElseThrow(() -> new VideoNotFoundException(id));
         if (video.getUploader() == null || !video.getUploader().getUsername().equals(username)) {
@@ -75,8 +84,11 @@ public class VideoService {
     /**
      * US-08: one page of the videos matching {@code query}, most relevant first. A blank query is not an error: it
      * returns the whole list, as {@link #getVideos(int, int)} (team decision for the empty search).
+     * The pages are cached by page, size and trimmed query (a blank query shares the key of the list).
      */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = VIDEO_PAGES_CACHE,
+            key = "#page + ':' + #size + ':' + (#query == null ? '' : #query.trim())")
     public PageResponse<VideoSummaryResponse> searchVideos(String query, int page, int size) {
         if (query == null || query.isBlank()) {
             return getVideos(page, size);
