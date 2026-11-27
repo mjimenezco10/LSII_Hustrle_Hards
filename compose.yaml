@@ -1,5 +1,6 @@
 # Full ProTube stack (NFR-03): `docker compose up --build` from the repo root, then open http://localhost:8080
-# (nginx serves the SPA, routes /api and /media to the backend and /storage to the S3 bucket)
+# (nginx serves the SPA, routes /api and /media to the backend and /storage to the S3 bucket; Redis caches the video
+# list and search pages)
 # Every variable has a default, so no .env file is needed; override them in a root .env file if required.
 
 services:
@@ -41,6 +42,22 @@ services:
       timeout: 5s
       retries: 20
 
+  # Cache of the video list and search pages (CacheConfig). Only a cache: no volume, so it starts empty and losing it
+  # loses nothing. Not exposed outside Docker, so it runs without password; its port is only published for debugging
+  redis:
+    image: redis:7-alpine
+    container_name: protube_redis
+    restart: unless-stopped
+    # Bounded memory: when full, the least recently used pages are dropped
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru --save "" --appendonly no
+    ports:
+      - "${PROTUBE_REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build: ./backend
     container_name: protube_backend
@@ -49,6 +66,8 @@ services:
       db:
         condition: service_healthy
       s3:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -68,6 +87,12 @@ services:
       # /media/<file> redirects here; nginx proxies /storage/ to the bucket
       ENV_PROTUBE_S3_PUBLIC_URL: ${ENV_PROTUBE_S3_PUBLIC_URL:-/storage}
       ENV_PROTUBE_DB_HOST: db
+      # Cache of GET /api/videos in the redis service (ENV_PROTUBE_CACHE=none turns it off); pages last TTL minutes
+      ENV_PROTUBE_CACHE: ${ENV_PROTUBE_CACHE:-redis}
+      ENV_PROTUBE_REDIS_HOST: ${ENV_PROTUBE_REDIS_HOST:-redis}
+      ENV_PROTUBE_REDIS_PORT: ${ENV_PROTUBE_REDIS_PORT:-6379}
+      ENV_PROTUBE_REDIS_PASSWORD: ${ENV_PROTUBE_REDIS_PASSWORD:-}
+      ENV_PROTUBE_CACHE_TTL_MINUTES: ${ENV_PROTUBE_CACHE_TTL_MINUTES:-10}
       ENV_PROTUBE_DB: ${ENV_PROTUBE_DB:-protube}
       ENV_PROTUBE_DB_USER: ${ENV_PROTUBE_DB_USER:-protube}
       ENV_PROTUBE_DB_PASS: ${ENV_PROTUBE_DB_PASS:-protube}

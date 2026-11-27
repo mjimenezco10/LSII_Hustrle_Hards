@@ -12,6 +12,7 @@ import com.tecnocampus.LS2.protube_back.repository.UserRepository;
 import com.tecnocampus.LS2.protube_back.repository.VideoRepository;
 import com.tecnocampus.LS2.protube_back.repository.VideoViewRepository;
 import com.tecnocampus.LS2.protube_back.storage.MediaStorage;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,6 +71,7 @@ public class AccountDeletionService {
      * @throws InvalidCredentialsException   if the user of the token no longer exists
      */
     @Transactional
+    @CacheEvict(cacheNames = VideoService.VIDEO_PAGES_CACHE, allEntries = true)
     public void deleteAccount(String username, DeleteAccountRequest request) {
         User user = userRepository.findByUsername(username).orElseThrow(InvalidCredentialsException::new);
         checkConfirmation(user, request);
