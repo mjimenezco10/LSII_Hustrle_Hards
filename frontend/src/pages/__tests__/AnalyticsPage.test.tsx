@@ -180,6 +180,19 @@ describe('AnalyticsPage', () => {
     expect(within(rows[2]).getByRole('link', { name: 'Summer in Girona' })).toHaveAttribute('href', '/videos/7');
   });
 
+  it('labels each counter with its column, for phones where the table header is hidden', async () => {
+    mockedFetchMyAnalytics.mockResolvedValueOnce(analytics);
+
+    renderPage();
+
+    const rows = within(await screen.findByRole('table')).getAllByRole('row');
+    const labels = within(rows[1])
+      .getAllByRole('cell')
+      .map((cell) => cell.getAttribute('data-label'));
+    // The first cell is the video itself: its title needs no label
+    expect(labels).toEqual([null, 'Published', 'Views', 'Comments', 'Comment likes']);
+  });
+
   it('shows an empty state with a link to upload a video when I have no videos', async () => {
     const user = userEvent.setup();
     mockedFetchMyAnalytics.mockResolvedValueOnce(empty);

@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { loginAsNewUser, registerNewUser, SEED_VIDEOS, uploadVideoAs } from './support';
+import { findInVideoGrid, loginAsNewUser, registerNewUser, SEED_VIDEOS, uploadVideoAs, userMenu } from './support';
 
 // WCAG 2.1 level A and AA, the level the design system asks for (docs/DESIGN_SYSTEM.md)
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
@@ -35,7 +35,7 @@ for (const theme of THEMES) {
 
     test('the pages a visitor sees have no WCAG 2.1 AA violations', async ({ page }) => {
       await page.goto('/');
-      await expectNoViolations(page, page.getByRole('link', { name: SEED_VIDEOS.mountain }).first());
+      await expectNoViolations(page, await findInVideoGrid(page, SEED_VIDEOS.mountain));
 
       await page.goto(`/?q=${encodeURIComponent(SEED_VIDEOS.city)}`);
       await expectNoViolations(page, page.getByRole('list', { name: `Results for "${SEED_VIDEOS.city}"` }));
@@ -81,6 +81,27 @@ for (const theme of THEMES) {
       await page.goto(`/profile/${user.username}`);
       await page.getByRole('button', { name: 'Edit profile' }).click();
       await expectNoViolations(page, page.getByRole('heading', { name: 'Edit your profile' }));
+    });
+
+    test('the phone layout has no WCAG 2.1 AA violations', async ({ page, request }) => {
+      // HH-91: logo-only navbar, wrapped settings sections and the analytics table shown as blocks
+      await page.setViewportSize({ width: 360, height: 740 });
+      const user = await loginAsNewUser(page, request);
+      const title = `A11y phone video ${Date.now()}`;
+      const id = await uploadVideoAs(request, user, title);
+
+      await page.goto('/');
+      await userMenu(page, user.username).click();
+      await expectNoViolations(page, page.getByRole('button', { name: 'Logout' }));
+
+      await page.goto(`/videos/${id}`);
+      await expectNoViolations(page, page.getByRole('heading', { level: 1, name: title }));
+
+      await page.goto('/settings');
+      await expectNoViolations(page, page.getByRole('heading', { level: 1 }));
+
+      await page.goto('/analytics');
+      await expectNoViolations(page, page.getByRole('link', { name: title }));
     });
   });
 }

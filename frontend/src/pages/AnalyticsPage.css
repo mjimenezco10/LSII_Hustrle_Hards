@@ -237,4 +237,64 @@
   .analytics-video img {
     width: 72px;
   }
+
+  /* Each video becomes a block (title, then its numbers with their column name) instead of a table that scrolls
+     sideways. The headers stay for screen readers; the labels come from data-label */
+  .analytics-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .analytics-table tbody,
+  .analytics-table tr,
+  .analytics-table td {
+    display: block;
+  }
+
+  .analytics-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem 0.75rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--pt-border);
+  }
+
+  .analytics-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  /* Bootstrap paints every cell (background + inset shadow); in blocks that shows as grey patches */
+  .analytics-table > :not(caption) > * > td {
+    padding: 0;
+    border-bottom-width: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .analytics-table td:first-child,
+  .analytics-table td:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+
+  .analytics-table td.text-end {
+    font-weight: 600;
+    text-align: left !important; /* Bootstrap's .text-end is !important */
+  }
+
+  .analytics-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--pt-text-secondary);
+  }
+
+  .analytics-table td:nth-child(2)::before {
+    display: inline;
+    margin-right: 0.35rem;
+  }
 }

@@ -84,6 +84,21 @@ export async function uploadVideoAs(request: APIRequestContext, user: Registered
   return id as number;
 }
 
+/**
+ * Finds a video in the home grid as a user would: the grid shows the newest videos first, so when other tests have
+ * uploaded enough videos the seed ones are on a later page, behind "Load more".
+ */
+export async function findInVideoGrid(page: Page, title: string): Promise<Locator> {
+  const link = page.getByRole('list', { name: 'Videos' }).getByRole('link', { name: title });
+  await expect(async () => {
+    if (!(await link.isVisible())) {
+      await page.getByRole('button', { name: 'Load more' }).click({ timeout: 2_000 });
+    }
+    await expect(link).toBeVisible({ timeout: 2_000 });
+  }).toPass();
+  return link;
+}
+
 export function userMenu(page: Page, username: string): Locator {
   return page.getByRole('button', { name: `User menu for ${username}` });
 }

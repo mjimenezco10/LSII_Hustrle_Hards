@@ -20,10 +20,11 @@
   margin-bottom: 1rem;
 }
 
+/* Phones and tablets: the sections wrap onto a second line instead of hiding off screen */
 .settings-nav nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.25rem;
-  overflow-x: auto;
 }
 
 .settings-nav a {
@@ -58,7 +59,9 @@
 }
 
 .settings-notice strong {
+  flex-shrink: 0;
   padding: 0.1rem 0.55rem;
+  white-space: nowrap;
   border-radius: 999px;
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -243,6 +246,13 @@
 .settings-save:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (max-width: 575.98px) {
+  /* The badge goes on its own line above the text */
+  .settings-notice {
+    flex-wrap: wrap;
+  }
 }
 
 @media (min-width: 992px) {

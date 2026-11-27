@@ -1,12 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { expectVideoToPlay, openVideoFromSearch, SEED_VIDEOS } from './support';
+import { expectVideoToPlay, findInVideoGrid, openVideoFromSearch, SEED_VIDEOS } from './support';
 
 test.describe('Browse, search and play videos', () => {
   test('the home page lists the videos of the store', async ({ page }) => {
     await page.goto('/');
-    const grid = page.getByRole('list', { name: 'Videos' });
-    await expect(grid.getByRole('link', { name: SEED_VIDEOS.mountain })).toBeVisible();
-    await expect(grid.getByRole('link', { name: SEED_VIDEOS.city })).toBeVisible();
+    await findInVideoGrid(page, SEED_VIDEOS.mountain);
+    await findInVideoGrid(page, SEED_VIDEOS.city);
   });
 
   test('searching by title shows only the matching videos and keeps the search in the URL', async ({ page }) => {
@@ -21,7 +20,7 @@ test.describe('Browse, search and play videos', () => {
 
     // The back button returns to the full list
     await page.goBack();
-    await expect(page.getByRole('list', { name: 'Videos' }).getByRole('link', { name: SEED_VIDEOS.city })).toBeVisible();
+    await findInVideoGrid(page, SEED_VIDEOS.city);
   });
 
   test('typing suggests titles and choosing one searches it', async ({ page }) => {

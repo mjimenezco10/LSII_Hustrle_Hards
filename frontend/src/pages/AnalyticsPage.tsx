@@ -181,12 +181,18 @@ const AnalyticsDashboard = ({ analytics }: { analytics: Analytics }) => {
                       <span>{video.title}</span>
                     </Link>
                   </td>
-                  <td className="text-muted text-nowrap">
+                  <td className="text-muted text-nowrap" data-label={t('analytics.published')}>
                     <time dateTime={video.publishedAt}>{formatDate(video.publishedAt)}</time>
                   </td>
-                  <td className="text-end">{formatNumber(video.views)}</td>
-                  <td className="text-end">{formatNumber(video.comments)}</td>
-                  <td className="text-end">{formatNumber(video.commentLikes)}</td>
+                  <td className="text-end" data-label={t('analytics.views')}>
+                    {formatNumber(video.views)}
+                  </td>
+                  <td className="text-end" data-label={t('analytics.comments')}>
+                    {formatNumber(video.comments)}
+                  </td>
+                  <td className="text-end" data-label={t('analytics.commentLikes')}>
+                    {formatNumber(video.commentLikes)}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -244,6 +244,26 @@ US-03 adds it); a `/subscriptions` page with the videos of the subscribed channe
 
 ---
 
+## Epic 10 — Mobile & responsive (improvement)
+
+### US-14: Use ProTube on a phone or tablet
+
+**As a** user, **I want** to use ProTube on my phone or tablet, **so that** I can watch videos anywhere.
+
+**Scope:** the video grid, the video player, the user menu and the forms, from the narrowest common phone (320px) to
+tablets (768px–991px), with the breakpoints of the design system.
+
+**Acceptance criteria**
+
+* Given a user on a phone or a tablet, when they browse the grid, play a video, open the user menu or fill a form,
+  then the layout adapts to the screen and every control is reachable.
+* Given any page at a common mobile width (320px–414px) or tablet width (768px), then the page has no horizontal
+  scroll and no broken layout (overlapping or cut-off elements).
+
+**Priority:** Could have (README improvement "Mobile/Responsiveness", Jira HH-91)
+
+---
+
 ## Non-functional & engineering requirements
 
 These are cross-cutting constraints that apply to the whole MVP rather than a single feature. They belong in the
