@@ -7,16 +7,18 @@ import com.tecnocampus.LS2.protube_back.controller.dto.VideoSummaryResponse;
 import com.tecnocampus.LS2.protube_back.domain.User;
 import com.tecnocampus.LS2.protube_back.repository.UserRepository;
 import com.tecnocampus.LS2.protube_back.repository.VideoRepository;
+import com.tecnocampus.LS2.protube_back.storage.MediaCleanupEvent;
 import com.tecnocampus.LS2.protube_back.storage.MediaStorage;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -36,12 +38,14 @@ public class ProfileService {
     private final UserRepository userRepository;
     private final VideoRepository videoRepository;
     private final MediaStorage mediaStorage;
+    private final ApplicationEventPublisher events;
 
     public ProfileService(UserRepository userRepository, VideoRepository videoRepository,
-                          MediaStorage mediaStorage) {
+                          MediaStorage mediaStorage, ApplicationEventPublisher events) {
         this.userRepository = userRepository;
         this.videoRepository = videoRepository;
         this.mediaStorage = mediaStorage;
+        this.events = events;
     }
 
     /**
@@ -90,7 +94,7 @@ public class ProfileService {
 
     /**
      * Replaces the avatar of {@code username}. The old image is deleted once the change is committed, and the new
-     * one if the change is rolled back, so the store never keeps images nobody uses.
+     * one if the change is rolled back, so the store never keeps images nobody uses ({@link MediaCleanupEvent}).
      *
      * @throws InvalidUploadException     if the image is missing, empty, too big or of an unsupported format
      * @throws VideoStorageException      if the image cannot be written to the store
@@ -110,9 +114,8 @@ public class ProfileService {
 
         String oldAvatarFile = user.getAvatarFile();
         user.changeAvatar(avatarFile);
-        afterTransaction(
-                () -> deleteQuietly(oldAvatarFile),
-                () -> deleteQuietly(avatarFile));
+        events.publishEvent(new MediaCleanupEvent(
+                Collections.singletonList(oldAvatarFile), List.of(avatarFile)));
         return ProfileResponse.of(user, videoRepository.countByAuthor(username));
     }
 
@@ -126,7 +129,7 @@ public class ProfileService {
         User user = find(username);
         String oldAvatarFile = user.getAvatarFile();
         user.changeAvatar(null);
-        afterTransaction(() -> deleteQuietly(oldAvatarFile), () -> { });
+        events.publishEvent(MediaCleanupEvent.onCommit(Collections.singletonList(oldAvatarFile)));
         return ProfileResponse.of(user, videoRepository.countByAuthor(username));
     }
 
@@ -152,30 +155,5 @@ public class ProfileService {
 
     private static String blankToNull(String text) {
         return text == null || text.isBlank() ? null : text.strip();
-    }
-
-    // Outside a transaction (unit tests) the change counts as committed at once
-    private static void afterTransaction(Runnable onCommit, Runnable onRollback) {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            onCommit.run();
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCompletion(int status) {
-                if (status == STATUS_COMMITTED) {
-                    onCommit.run();
-                } else {
-                    onRollback.run();
-                }
-            }
-        });
-    }
-
-    // An image that cannot be deleted only wastes space
-    private void deleteQuietly(String avatarFile) {
-        if (avatarFile != null) {
-            mediaStorage.deleteQuietly(avatarFile);
-        }
     }
 }
