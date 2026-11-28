@@ -80,6 +80,19 @@ Font stack: `Inter, system-ui, -apple-system, sans-serif`.
   filter pills).
 - Bootstrap 12-column grid and breakpoints: `sm` 576px, `md` 768px, `lg` 992px, `xl` 1200px, `xxl` 1400px.
 
+## Responsive (US-14)
+
+Every page works from 320px (the narrowest common phone) up, with no horizontal scroll. Media queries use the
+Bootstrap breakpoints above (`max-width: 575.98px` for phones, `991.98px` up to tablets); the only extra one is
+`399.98px` for the navbar.
+
+- **Navbar:** below 576px "Create" shows only its `+` icon (the text stays as its accessible name) and the gaps
+  shrink; below 400px the brand shows only the logo, so every action fits at 320px. Buttons never wrap their text.
+- **Tables:** on phones a data table becomes one block per row (first cell full width, then the values with their
+  column name from `data-label`), instead of a table that scrolls sideways. The header stays for screen readers.
+- **Section links and badges** wrap onto a new line instead of being cut or squeezed.
+- Check new pages at 320, 360, 390 and 768px; `e2e/tests/responsive.spec.ts` fails if a page scrolls sideways.
+
 ## Components
 
 - **Navbar:** sticky, height `--pt-navbar-height` (64px), background `--pt-bg-body` with a `--pt-border` bottom
